@@ -1,0 +1,988 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CalcTech - Technischer Formelrechner</title>
+    <meta name="description" content="CalcTech - Der modernste technische Formelrechner für Berufsschüler in der Schweiz. Einfache Berechnungen für Elektrotechnik, Physik und Mathematik.">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-darker: #181818;
+            --bg-sidebar: #252526;
+            --bg-editor: #1e1e1e;
+            --bg-header: #3c3c3c;
+            --bg-tab-active: #1e1e1e;
+            --bg-tab-inactive: #2d2d2d;
+            --bg-hover: #2a2d2e;
+            --text-normal: #cccccc;
+            --text-muted: #858585;
+            --text-active: #ffffff;
+            --accent-color: #007acc;
+            --border-color: #3c3c3c;
+            --status-bg: #007acc;
+            --status-fg: #ffffff;
+            --font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            --mono-font: 'Fira Code', Consolas, monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--bg-editor);
+            color: var(--text-normal);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Header */
+        header {
+            background-color: var(--bg-header);
+            height: 35px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 15px;
+            font-size: 13px;
+            user-select: none;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .header-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .header-logo {
+            color: var(--accent-color);
+            font-weight: 700;
+        }
+
+        .header-title {
+            color: var(--text-muted);
+        }
+
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            color: var(--text-muted);
+        }
+
+        /* Main Workspace */
+        .workspace {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        /* Sidebar */
+        aside {
+            width: 260px;
+            background-color: var(--bg-sidebar);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+            transition: transform 0.3s ease;
+        }
+
+        .sidebar-header {
+            padding: 10px 15px;
+            font-size: 11px;
+            text-transform: uppercase;
+            font-weight: 600;
+            color: var(--text-muted);
+            letter-spacing: 0.5px;
+        }
+
+        .explorer {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .explorer::-webkit-scrollbar {
+            width: 8px;
+        }
+        .explorer::-webkit-scrollbar-thumb {
+            background: #424242;
+        }
+        .explorer::-webkit-scrollbar-thumb:hover {
+            background: #4f4f4f;
+        }
+
+        /* Accordion items */
+        .folder {
+            user-select: none;
+        }
+
+        .folder-title {
+            padding: 6px 15px;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .folder-title:hover {
+            background-color: var(--bg-hover);
+        }
+
+        .folder-icon {
+            margin-right: 6px;
+            font-size: 10px;
+            transition: transform 0.15s ease;
+            width: 15px;
+            display: inline-block;
+            text-align: center;
+            color: var(--text-muted);
+        }
+
+        .folder.open .folder-icon {
+            transform: rotate(90deg);
+        }
+
+        .folder-content {
+            display: none;
+            flex-direction: column;
+        }
+
+        .folder.open .folder-content {
+            display: flex;
+        }
+
+        .file {
+            padding: 4px 15px 4px 35px;
+            font-size: 13px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+        }
+
+        .file:hover {
+            background-color: var(--bg-hover);
+        }
+
+        .file.active {
+            background-color: #37373d;
+            color: var(--text-active);
+        }
+
+        .file-icon {
+            margin-right: 8px;
+            color: var(--accent-color);
+            font-family: var(--mono-font);
+            font-weight: 500;
+        }
+
+        /* Main Editor Area */
+        main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background-color: var(--bg-editor);
+            overflow: hidden;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            background-color: var(--bg-sidebar);
+            overflow-x: auto;
+        }
+
+        .tabs::-webkit-scrollbar {
+            height: 3px;
+        }
+        .tabs::-webkit-scrollbar-thumb {
+            background: #555;
+        }
+
+        .tab {
+            padding: 8px 15px;
+            background-color: var(--bg-tab-inactive);
+            color: var(--text-muted);
+            font-size: 13px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            border-right: 1px solid var(--bg-darker);
+            border-top: 2px solid transparent;
+            user-select: none;
+        }
+
+        .tab:hover {
+            background-color: var(--bg-hover);
+        }
+
+        .tab.active {
+            background-color: var(--bg-tab-active);
+            color: var(--text-active);
+            border-top: 2px solid var(--accent-color);
+        }
+
+        .tab-close {
+            margin-left: 8px;
+            font-size: 12px;
+            padding: 2px;
+            border-radius: 3px;
+            opacity: 0;
+            transition: opacity 0.2s, background-color 0.2s;
+            width: 18px;
+            height: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .tab:hover .tab-close, .tab.active .tab-close {
+            opacity: 1;
+        }
+
+        .tab-close:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        /* Editor Content */
+        .editor-content {
+            flex: 1;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .editor-content::-webkit-scrollbar {
+            width: 12px;
+        }
+        .editor-content::-webkit-scrollbar-thumb {
+            background: rgba(121, 121, 121, 0.4);
+        }
+        .editor-content::-webkit-scrollbar-thumb:hover {
+            background: rgba(100, 100, 100, 0.7);
+        }
+
+        .editor-pane {
+            display: none;
+            padding: 40px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .editor-pane.active {
+            display: block;
+            animation: fadeIn 0.2s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Placeholder Card */
+        .calc-card {
+            background-color: #252526;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 30px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+
+        .calc-card h2 {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: var(--text-active);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .calc-card p {
+            color: var(--text-muted);
+            margin-bottom: 30px;
+            line-height: 1.5;
+            font-size: 14px;
+        }
+
+        .mock-input-group {
+            margin-bottom: 15px;
+        }
+
+        .mock-input-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 12px;
+            color: var(--text-muted);
+            font-family: var(--mono-font);
+        }
+
+        .mock-input {
+            width: 100%;
+            background-color: #3c3c3c;
+            border: 1px solid #555;
+            padding: 10px 12px;
+            border-radius: 4px;
+            color: var(--text-muted);
+            font-family: var(--mono-font);
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .mock-input:focus {
+            border-color: var(--accent-color);
+        }
+
+        .mock-button {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            font-weight: 500;
+            cursor: not-allowed;
+            opacity: 0.8;
+            margin-top: 10px;
+            width: 100%;
+            font-size: 14px;
+        }
+
+        /* Welcome Screen */
+        .welcome-screen {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            text-align: center;
+            color: var(--text-muted);
+        }
+
+        .welcome-logo {
+            font-size: 80px;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .welcome-title {
+            font-size: 32px;
+            font-weight: 300;
+            color: var(--text-normal);
+            margin-bottom: 10px;
+            letter-spacing: 1px;
+        }
+
+        .welcome-shortcuts {
+            margin-top: 40px;
+            text-align: left;
+        }
+
+        .shortcut {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            font-size: 13px;
+        }
+
+        .shortcut-key {
+            background-color: #333;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-family: var(--mono-font);
+            margin-left: 20px;
+            border: 1px solid #444;
+            box-shadow: 0 2px 0 #222;
+        }
+
+        /* Status Bar */
+        footer {
+            background-color: var(--status-bg);
+            color: var(--status-fg);
+            height: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 10px;
+            font-size: 12px;
+            font-weight: 500;
+            user-select: none;
+        }
+
+        .status-left, .status-right {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .status-item {
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 0 5px;
+            height: 22px;
+            transition: background-color 0.1s;
+        }
+
+        .status-item:hover {
+            background-color: rgba(255,255,255,0.15);
+        }
+
+        /* Responsive */
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            color: var(--text-normal);
+            font-size: 18px;
+            cursor: pointer;
+            padding: 0 5px;
+        }
+
+        .backdrop {
+            display: none;
+            position: fixed;
+            top: 35px;
+            left: 0;
+            right: 0;
+            bottom: 22px;
+            background: rgba(0,0,0,0.5);
+            z-index: 90;
+        }
+
+        @media (max-width: 768px) {
+            .mobile-menu-btn {
+                display: block;
+            }
+            
+            aside {
+                position: absolute;
+                z-index: 100;
+                height: calc(100vh - 57px); /* minus header and footer */
+                transform: translateX(-100%);
+            }
+            
+            aside.mobile-open {
+                transform: translateX(0);
+                box-shadow: 4px 0 15px rgba(0,0,0,0.5);
+            }
+            
+            .backdrop.mobile-open {
+                display: block;
+            }
+            
+            .header-title {
+                display: none;
+            }
+
+            .editor-pane {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header>
+        <div class="header-brand">
+            <button class="mobile-menu-btn" id="mobileMenuBtn">☰</button>
+            <span class="header-logo">▱ CalcTech</span>
+            <span class="header-title">Technischer Formelrechner</span>
+        </div>
+        <div class="header-controls">
+            <span>🇨🇭 Edition</span>
+        </div>
+    </header>
+
+    <!-- Workspace -->
+    <div class="workspace">
+        <!-- Sidebar -->
+        <aside id="sidebar">
+            <div class="sidebar-header">Explorer</div>
+            <div class="explorer" id="explorer">
+                <!-- Folders are generated by JS -->
+            </div>
+        </aside>
+        
+        <div class="backdrop" id="backdrop"></div>
+
+        <!-- Main Editor -->
+        <main>
+            <!-- Tabs Bar -->
+            <div class="tabs" id="tabsBar">
+                <!-- Tabs generated by JS -->
+            </div>
+            
+            <!-- Content Area -->
+            <div class="editor-content" id="editorContent">
+                <!-- Welcome Screen -->
+                <div class="welcome-screen" id="welcomeScreen">
+                    <div class="welcome-logo">▱</div>
+                    <h1 class="welcome-title">CalcTech</h1>
+                    <p>Technischer Formelrechner für Berufsschüler</p>
+                    <div class="welcome-shortcuts">
+                        <div class="shortcut">
+                            <span>Wähle eine Kategorie in der Seitenleiste</span>
+                            <span class="shortcut-key">Explorer</span>
+                        </div>
+                        <div class="shortcut">
+                            <span>Formeln öffnen und berechnen</span>
+                            <span class="shortcut-key">Click</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- Dynamic Panes generated by JS -->
+            </div>
+        </main>
+    </div>
+
+    <!-- Status Bar -->
+    <footer>
+        <div class="status-left">
+            <span class="status-item">⚡ Bereit</span>
+            <span class="status-item">0 Fehler, 0 Warnungen</span>
+        </div>
+        <div class="status-right">
+            <span class="status-item" title="Präzision (Stellen)">4 Stellen</span>
+            <span class="status-item">UTF-8</span>
+            <span class="status-item">HTML/JS</span>
+        </div>
+    </footer>
+
+    <script>
+        // Data Structure matching the desktop app conceptually
+        const categories = [
+            {
+                id: 'elektrotechnik',
+                name: 'Elektrotechnik',
+                open: true,
+                items: [
+                    { id: 'ohmsches-gesetz', name: 'Ohmsches Gesetz', icon: 'Ω', desc: 'Berechnung von Spannung (U), Strom (I), Widerstand (R) und Leistung (P).' },
+                    { id: 'leistung', name: 'Leistung', icon: 'W', desc: 'Berechnung der elektrischen Leistung (P).' },
+                    { id: 'widerstand', name: 'Widerstand', icon: 'R', desc: 'Reihen- und Parallelschaltung, Farbcode, Innenwiderstand.' }
+                ]
+            },
+            {
+                id: 'physik',
+                name: 'Physik',
+                open: false,
+                items: [
+                    { id: 'mechanik', name: 'Mechanik', icon: 'F', desc: 'Geschwindigkeit, Beschleunigung, Kraft und Hebelgesetz.' },
+                    { id: 'energie', name: 'Energie', icon: 'E', desc: 'Potentielle, kinetische Energie und Arbeit.' },
+                    { id: 'thermodynamik', name: 'Thermodynamik', icon: 'T', desc: 'Wärmemenge, Temperaturumrechnung und Ausdehnung.' }
+                ]
+            },
+            {
+                id: 'mathematik',
+                name: 'Mathematik',
+                open: false,
+                items: [
+                    { id: 'trigonometrie', name: 'Trigonometrie', icon: 'θ', desc: 'Sinus, Cosinus, Tangens am rechtwinkligen Dreieck.' },
+                    { id: 'geometrie', name: 'Geometrie', icon: '△', desc: 'Flächen- und Volumenberechnung diverser Körper.' }
+                ]
+            },
+            {
+                id: 'eigene-formeln',
+                name: 'Eigene Formeln',
+                open: false,
+                items: []
+            }
+        ];
+
+        // State
+        let openTabs = [];
+        let activeTabId = null;
+
+        // DOM Elements
+        const explorerEl = document.getElementById('explorer');
+        const tabsBarEl = document.getElementById('tabsBar');
+        const editorContentEl = document.getElementById('editorContent');
+        const welcomeScreenEl = document.getElementById('welcomeScreen');
+        const sidebarEl = document.getElementById('sidebar');
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const backdropEl = document.getElementById('backdrop');
+
+        // Initialize UI
+        function init() {
+            renderSidebar();
+            
+            // Mobile Menu Toggle
+            mobileMenuBtn.addEventListener('click', toggleMobileMenu);
+            backdropEl.addEventListener('click', toggleMobileMenu);
+        }
+        
+        function toggleMobileMenu() {
+            sidebarEl.classList.toggle('mobile-open');
+            backdropEl.classList.toggle('mobile-open');
+        }
+
+        // Render Sidebar
+        function renderSidebar() {
+            explorerEl.innerHTML = '';
+            
+            categories.forEach(folder => {
+                const folderEl = document.createElement('div');
+                folderEl.className = `folder ${folder.open ? 'open' : ''}`;
+                
+                // Folder Title
+                const titleEl = document.createElement('div');
+                titleEl.className = 'folder-title';
+                titleEl.innerHTML = `<span class="folder-icon">▶</span> ${folder.name}`;
+                titleEl.addEventListener('click', () => {
+                    folder.open = !folder.open;
+                    folderEl.classList.toggle('open');
+                });
+                
+                // Folder Content (Files)
+                const contentEl = document.createElement('div');
+                contentEl.className = 'folder-content';
+                
+                if (folder.items.length === 0) {
+                    const emptyEl = document.createElement('div');
+                    emptyEl.className = 'file';
+                    emptyEl.style.color = 'var(--text-muted)';
+                    emptyEl.style.fontStyle = 'italic';
+                    emptyEl.textContent = 'Leer';
+                    contentEl.appendChild(emptyEl);
+                } else {
+                    folder.items.forEach(item => {
+                        const fileEl = document.createElement('div');
+                        fileEl.className = 'file';
+                        fileEl.id = `file-${item.id}`;
+                        fileEl.innerHTML = `<span class="file-icon">${item.icon}</span> ${item.name}`;
+                        
+                        fileEl.addEventListener('click', () => {
+                            openTab(item);
+                            // Close mobile menu if open
+                            if(window.innerWidth <= 768) {
+                                toggleMobileMenu();
+                            }
+                        });
+                        
+                        contentEl.appendChild(fileEl);
+                    });
+                }
+                
+                folderEl.appendChild(titleEl);
+                folderEl.appendChild(contentEl);
+                explorerEl.appendChild(folderEl);
+            });
+            
+            updateSidebarHighlight();
+        }
+
+        // Tab Management
+        function openTab(item) {
+            if (!openTabs.find(t => t.id === item.id)) {
+                openTabs.push(item);
+                createPane(item);
+            }
+            setActiveTab(item.id);
+        }
+
+        function closeTab(e, id) {
+            e.stopPropagation(); // Prevent tab click event
+            
+            const index = openTabs.findIndex(t => t.id === id);
+            if (index > -1) {
+                openTabs.splice(index, 1);
+                
+                // Remove pane
+                const pane = document.getElementById(`pane-${id}`);
+                if(pane) pane.remove();
+                
+                // Determine new active tab
+                if (activeTabId === id) {
+                    if (openTabs.length > 0) {
+                        // Switch to the previous tab or the first one
+                        const newActive = openTabs[index - 1] || openTabs[0];
+                        setActiveTab(newActive.id);
+                    } else {
+                        setActiveTab(null);
+                    }
+                } else {
+                    renderTabs();
+                }
+            }
+        }
+
+        function setActiveTab(id) {
+            activeTabId = id;
+            renderTabs();
+            updateSidebarHighlight();
+            updatePanes();
+        }
+
+        // Render Tabs Bar
+        function renderTabs() {
+            tabsBarEl.innerHTML = '';
+            
+            openTabs.forEach(item => {
+                const tabEl = document.createElement('div');
+                tabEl.className = `tab ${item.id === activeTabId ? 'active' : ''}`;
+                
+                tabEl.innerHTML = `
+                    <span class="file-icon" style="margin-right:6px; font-size:12px;">${item.icon}</span> 
+                    ${item.name}
+                    <span class="tab-close">✕</span>
+                `;
+                
+                tabEl.addEventListener('click', () => setActiveTab(item.id));
+                
+                const closeBtn = tabEl.querySelector('.tab-close');
+                closeBtn.addEventListener('click', (e) => closeTab(e, item.id));
+                
+                tabsBarEl.appendChild(tabEl);
+            });
+        }
+
+        // Update active file highlight in sidebar
+        function updateSidebarHighlight() {
+            document.querySelectorAll('.file').forEach(el => el.classList.remove('active'));
+            if (activeTabId) {
+                const activeEl = document.getElementById(`file-${activeTabId}`);
+                if (activeEl) activeEl.classList.add('active');
+            }
+        }
+
+        // Create a new pane for an item
+        function createPane(item) {
+            const paneEl = document.createElement('div');
+            paneEl.className = 'editor-pane';
+            paneEl.id = `pane-${item.id}`;
+            
+            if (item.id === 'ohmsches-gesetz') {
+                paneEl.innerHTML = `
+                    <div class="calc-card">
+                        <h2><span style="color:var(--accent-color); font-family:var(--mono-font);">${item.icon}</span> ${item.name}</h2>
+                        <p>${item.desc}</p>
+                        
+                        <div style="padding: 25px; background-color: rgba(0,0,0,0.25); border-radius: 6px; border: 1px solid #444;">
+                            <div id="ohm-error-box" style="display:none; color: #ff5555; margin-bottom: 15px; padding: 10px; border: 1px solid rgba(255,85,85,0.4); border-radius: 4px; background: rgba(255,85,85,0.1); font-size: 13px;"></div>
+                            
+                            <div class="mock-input-group">
+                                <label>Spannung U [V]</label>
+                                <input type="number" id="ohm-u" class="mock-input" placeholder="Volt" step="any">
+                            </div>
+                            <div class="mock-input-group">
+                                <label>Strom I [A]</label>
+                                <input type="number" id="ohm-i" class="mock-input" placeholder="Ampere" step="any">
+                            </div>
+                            <div class="mock-input-group">
+                                <label>Widerstand R [Ω]</label>
+                                <input type="number" id="ohm-r" class="mock-input" placeholder="Ohm" step="any">
+                            </div>
+                            <div class="mock-input-group">
+                                <label>Leistung P [W]</label>
+                                <input type="number" id="ohm-p" class="mock-input" placeholder="Watt" step="any">
+                            </div>
+                            
+                            <div style="display: flex; gap: 10px; margin-top: 25px;">
+                                <button class="mock-button" id="ohm-calc-btn" style="opacity:1; cursor:pointer; flex: 1;">BERECHNEN</button>
+                                <button class="mock-button" id="ohm-clear-btn" style="opacity:1; cursor:pointer; background-color:#dc2626; flex: 0.3;">LEEREN</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                editorContentEl.appendChild(paneEl);
+                initOhmCalculator();
+            } else {
+                paneEl.innerHTML = `
+                    <div class="calc-card">
+                        <h2><span style="color:var(--accent-color); font-family:var(--mono-font);">${item.icon}</span> ${item.name}</h2>
+                        <p>${item.desc}</p>
+                        
+                        <div style="padding: 25px; background-color: rgba(0,0,0,0.25); border-radius: 6px; border: 1px dashed #444;">
+                            <div class="mock-input-group">
+                                <label>Eingabewert 1</label>
+                                <input type="text" class="mock-input" placeholder="0.00" disabled>
+                            </div>
+                            <div class="mock-input-group">
+                                <label>Eingabewert 2</label>
+                                <input type="text" class="mock-input" placeholder="0.00" disabled>
+                            </div>
+                            <button class="mock-button" disabled>BERECHNEN (F5)</button>
+                            
+                            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #3c3c3c;">
+                                <label style="font-size:12px; color:var(--text-muted); display:block; margin-bottom:8px;">Ergebnis</label>
+                                <div style="font-family:var(--mono-font); font-size:20px; color:var(--text-normal); background-color: #1e1e1e; padding: 10px; border-radius: 4px; border: 1px solid #333;">
+                                    —
+                                </div>
+                            </div>
+                            <div style="margin-top: 20px; font-size: 11.5px; color: #777; font-style: italic; line-height: 1.4;">
+                                Hinweis: Dies ist das UI-Grundgerüst. Die Berechnungslogik aus <strong>Calculator_v12_1.py</strong> wird in der nächsten Version integriert.
+                            </div>
+                        </div>
+                    </div>
+                `;
+                editorContentEl.appendChild(paneEl);
+            }
+        }
+
+        // Ohm's Law Calculator Logic
+        function initOhmCalculator() {
+            const inputs = {
+                U: document.getElementById('ohm-u'),
+                I: document.getElementById('ohm-i'),
+                R: document.getElementById('ohm-r'),
+                P: document.getElementById('ohm-p')
+            };
+            const btnCalc = document.getElementById('ohm-calc-btn');
+            const btnClear = document.getElementById('ohm-clear-btn');
+            const errBox = document.getElementById('ohm-error-box');
+
+            // Reset formatting when user edits a field manually
+            Object.values(inputs).forEach(input => {
+                input.addEventListener('input', () => {
+                    input.style.color = 'var(--text-normal)';
+                    input.style.fontWeight = 'normal';
+                    errBox.style.display = 'none';
+                });
+                // Auto-calculate on Enter key
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') calculateOhm();
+                });
+            });
+
+            btnClear.addEventListener('click', () => {
+                Object.values(inputs).forEach(input => {
+                    input.value = '';
+                    input.style.color = 'var(--text-normal)';
+                    input.style.fontWeight = 'normal';
+                });
+                errBox.style.display = 'none';
+            });
+
+            btnCalc.addEventListener('click', calculateOhm);
+
+            function calculateOhm() {
+                errBox.style.display = 'none';
+                
+                let v = {
+                    U: inputs.U.value.trim() !== '' ? parseFloat(inputs.U.value.replace(',', '.')) : null,
+                    I: inputs.I.value.trim() !== '' ? parseFloat(inputs.I.value.replace(',', '.')) : null,
+                    R: inputs.R.value.trim() !== '' ? parseFloat(inputs.R.value.replace(',', '.')) : null,
+                    P: inputs.P.value.trim() !== '' ? parseFloat(inputs.P.value.replace(',', '.')) : null
+                };
+                
+                let original = { U: v.U, I: v.I, R: v.R, P: v.P };
+                let errors = [];
+
+                if (v.R !== null && v.R <= 0) errors.push("Widerstand R muss > 0 sein.");
+                if (v.U !== null && v.U < 0) errors.push("Spannung U darf nicht negativ sein.");
+                if (v.I !== null && v.I < 0) errors.push("Strom I darf nicht negativ sein.");
+                if (v.P !== null && v.P < 0) errors.push("Leistung P darf nicht negativ sein.");
+
+                if (errors.length > 0) {
+                    showError(errors.join('<br>'));
+                    return;
+                }
+
+                let enteredCount = Object.values(original).filter(val => val !== null).length;
+                if (enteredCount < 2) {
+                    showError("Bitte mindestens 2 Werte eingeben.");
+                    return;
+                }
+
+                // Fixed-point iteration for calculating missing values
+                for(let iter=0; iter<3; iter++) {
+                    let prev = JSON.stringify(v);
+                    
+                    if (v.R !== null && v.I !== null && v.U === null) v.U = v.R * v.I;
+                    if (v.U !== null && v.R !== null && v.I === null && v.R !== 0) v.I = v.U / v.R;
+                    if (v.U !== null && v.I !== null && v.R === null && v.I !== 0) v.R = v.U / v.I;
+                    
+                    if (v.U !== null && v.I !== null && v.P === null) v.P = v.U * v.I;
+                    if (v.U !== null && v.R !== null && v.P === null && v.R !== 0) v.P = Math.pow(v.U, 2) / v.R;
+                    if (v.I !== null && v.R !== null && v.P === null) v.P = Math.pow(v.I, 2) * v.R;
+                    
+                    if (v.P !== null && v.U !== null && v.I === null && v.U !== 0) v.I = v.P / v.U;
+                    if (v.P !== null && v.I !== null && v.U === null && v.I !== 0) v.U = v.P / v.I;
+                    
+                    if (v.P !== null && v.I !== null && v.R === null && v.I !== 0) v.R = v.P / Math.pow(v.I, 2);
+                    if (v.U !== null && v.P !== null && v.R === null && v.P !== 0) v.R = Math.pow(v.U, 2) / v.P;
+                    
+                    if (v.P !== null && v.R !== null && v.P >= 0 && v.R > 0) {
+                        if (v.I === null) v.I = Math.sqrt(v.P / v.R);
+                        if (v.U === null) v.U = Math.sqrt(v.P * v.R);
+                    }
+                    if(prev === JSON.stringify(v)) break;
+                }
+
+                // Consistency Check
+                let tol = 1e-3;
+                if (v.U !== null && v.I !== null && v.R !== null && v.R !== 0) {
+                    let expected_u = v.R * v.I;
+                    if (Math.abs(expected_u - v.U) / Math.max(Math.abs(v.U), 1e-12) > tol) {
+                        errors.push(`Widerspruch: U=${parseFloat(v.U.toPrecision(4))}V ≠ R·I=${parseFloat(expected_u.toPrecision(4))}V`);
+                    }
+                }
+                if (v.U !== null && v.I !== null && v.P !== null) {
+                    let expected_p = v.U * v.I;
+                    if (Math.abs(expected_p - v.P) / Math.max(Math.abs(v.P), 1e-12) > tol) {
+                        errors.push(`Widerspruch: P=${parseFloat(v.P.toPrecision(4))}W ≠ U·I=${parseFloat(expected_p.toPrecision(4))}W`);
+                    }
+                }
+
+                if (errors.length > 0) {
+                    showError(errors.join('<br>'));
+                    // We can still display the values to show the user what was computed
+                }
+
+                const formatVal = (val) => {
+                    if(val === null || isNaN(val)) return '';
+                    let s = val.toPrecision(5);
+                    return parseFloat(s).toString();
+                };
+
+                for (let key in v) {
+                    if (v[key] !== null && !isNaN(v[key])) {
+                        inputs[key].value = formatVal(v[key]);
+                        // Mark newly calculated values as blue
+                        if (original[key] === null) {
+                            inputs[key].style.color = '#60a5fa'; // High visibility blue
+                            inputs[key].style.fontWeight = 'bold';
+                        }
+                    }
+                }
+            }
+
+            function showError(msg) {
+                errBox.innerHTML = msg;
+                errBox.style.display = 'block';
+            }
+        }
+
+        // Show active pane, hide others
+        function updatePanes() {
+            // Manage Welcome Screen
+            if (openTabs.length === 0) {
+                welcomeScreenEl.style.display = 'flex';
+            } else {
+                welcomeScreenEl.style.display = 'none';
+            }
+            
+            // Manage Panes
+            document.querySelectorAll('.editor-pane').forEach(el => {
+                if (el.id === `pane-${activeTabId}`) {
+                    el.classList.add('active');
+                } else {
+                    el.classList.remove('active');
+                }
+            });
+        }
+
+        // Start
+        init();
+    </script>
+</body>
+</html>
