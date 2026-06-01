@@ -647,8 +647,16 @@
                 open: true,
                 items: [
                     { id: 'ohmsches-gesetz', name: 'Ohmsches Gesetz', icon: 'Ω', desc: 'Berechnung von Spannung (U), Strom (I), Widerstand (R) und Leistung (P).' },
-                    { id: 'leistung', name: 'Leistung', icon: 'W', desc: 'Berechnung der elektrischen Leistung (P).' },
+                    { id: 'leistung', name: 'Leistung', icon: 'W', desc: 'Elektrische Leistung: P=U·I, P=U²/R, P=I²·R (bidirektional).' },
                     { id: 'widerstand', name: 'Widerstand', icon: 'R', desc: 'Reihen- und Parallelschaltung, Farbcode, Innenwiderstand.' },
+                    { id: 'widerstand-reihe', name: 'Widerstand Reihe', icon: '∑R', desc: 'Reihenschaltung: R_ges = R1 + R2 + R3 (bidirektional).' },
+                    { id: 'widerstand-parallel', name: 'Widerstand Parallel', icon: 'R∥', desc: 'Parallelschaltung: 1/R_ges = 1/R1 + 1/R2 + 1/R3 (bidirektional).' },
+                    { id: 'farbcode', name: 'Widerstand Farbcode', icon: '≋', desc: '5-Band Farbring-Decoder: Farbe → Wert und Wert → Farbe (12 Farben).' },
+                    { id: 'spannungsteiler', name: 'Spannungsteiler', icon: 'U÷', desc: 'Spannungsteiler: U_aus = U_ein · R2/(R1+R2).' },
+                    { id: 'kondensator', name: 'Kondensator', icon: 'C', desc: 'Ladung Q=C·U, Energie E=½·C·U² — Präfixe µF, nF, pF unterstützt.' },
+                    { id: 'batterie', name: 'Batterie / Innenwiderstand', icon: 'Bat', desc: 'EMK, Ri, Ra, Klemmspannung, Strom, Pa/Pi/P_ges — vollständig bidirektional.' },
+                    { id: 'energie-arbeit', name: 'Energie & Arbeit', icon: 'Wh', desc: 'Elektrische Arbeit: W=P·t, W_kWh=W/3600000 (bidirektional).' },
+                    { id: 'energiekosten', name: 'Energiekosten', icon: 'CHF', desc: 'Stromkosten Tag/Nacht-Tarif (CH): cost = P·h·d·pr/100000 (bidirektional).' },
                     { id: 'schaltungsbauer', name: 'Schaltungsbauer', icon: '⊟', desc: 'Widerstände visuell kombinieren — Reihe und Parallel — und U/I/R/P bidirektional berechnen.' }
                 ]
             },
@@ -876,6 +884,384 @@
                 `;
                 editorContentEl.appendChild(paneEl);
                 initOhmCalculator();
+            } else if (item.id === 'leistung') {
+                paneEl.innerHTML = `
+                    <div class="calc-card">
+                        <h2><span style="color:var(--accent-color); font-family:var(--mono-font);">${item.icon}</span> ${item.name}</h2>
+                        <p>${item.desc}</p>
+                        <div style="padding: 25px; background-color: rgba(0,0,0,0.25); border-radius: 6px; border: 1px solid #444;">
+                            <div id="pwr-error-box" style="display:none; color: #ff5555; margin-bottom: 15px; padding: 10px; border: 1px solid rgba(255,85,85,0.4); border-radius: 4px; background: rgba(255,85,85,0.1); font-size: 13px;"></div>
+                            <div class="mock-input-group">
+                                <label>Spannung U [V]</label>
+                                <input type="number" id="pwr-u" class="mock-input" placeholder="Volt" step="any">
+                            </div>
+                            <div class="mock-input-group">
+                                <label>Strom I [A]</label>
+                                <input type="number" id="pwr-i" class="mock-input" placeholder="Ampere" step="any">
+                            </div>
+                            <div class="mock-input-group">
+                                <label>Widerstand R [Ω]</label>
+                                <input type="number" id="pwr-r" class="mock-input" placeholder="Ohm" step="any">
+                            </div>
+                            <div class="mock-input-group">
+                                <label>Leistung P [W]</label>
+                                <input type="number" id="pwr-p" class="mock-input" placeholder="Watt" step="any">
+                            </div>
+                            <div style="display: flex; gap: 10px; margin-top: 25px;">
+                                <button class="mock-button" id="pwr-calc-btn" style="opacity:1; cursor:pointer; flex: 1;">BERECHNEN</button>
+                                <button class="mock-button" id="pwr-clear-btn" style="opacity:1; cursor:pointer; background-color:#dc2626; flex: 0.3;">LEEREN</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                editorContentEl.appendChild(paneEl);
+                initLeistungCalculator();
+            } else if (item.id === 'widerstand-reihe') {
+                paneEl.innerHTML = `
+                    <div class="calc-card">
+                        <h2><span style="color:var(--accent-color); font-family:var(--mono-font);">${item.icon}</span> ${item.name}</h2>
+                        <p>${item.desc}</p>
+                        <div style="padding: 25px; background-color: rgba(0,0,0,0.25); border-radius: 6px; border: 1px solid #444;">
+                            <div id="reihe-error-box" style="display:none; color: #ff5555; margin-bottom: 15px; padding: 10px; border: 1px solid rgba(255,85,85,0.4); border-radius: 4px; background: rgba(255,85,85,0.1); font-size: 13px;"></div>
+                            <div class="mock-input-group">
+                                <label>Widerstand R1 [Ω]</label>
+                                <input type="number" id="reihe-r1" class="mock-input" placeholder="Ohm" step="any">
+                            </div>
+                            <div class="mock-input-group">
+                                <label>Widerstand R2 [Ω]</label>
+                                <input type="number" id="reihe-r2" class="mock-input" placeholder="Ohm" step="any">
+                            </div>
+                            <div class="mock-input-group">
+                                <label>Widerstand R3 [Ω]</label>
+                                <input type="number" id="reihe-r3" class="mock-input" placeholder="Ohm" step="any">
+                            </div>
+                            <div class="mock-input-group">
+                                <label>Gesamtwiderstand R_ges [Ω]</label>
+                                <input type="number" id="reihe-rg" class="mock-input" placeholder="Ohm" step="any">
+                            </div>
+                            <div style="display: flex; gap: 10px; margin-top: 25px;">
+                                <button class="mock-button" id="reihe-calc-btn" style="opacity:1; cursor:pointer; flex: 1;">BERECHNEN</button>
+                                <button class="mock-button" id="reihe-clear-btn" style="opacity:1; cursor:pointer; background-color:#dc2626; flex: 0.3;">LEEREN</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                editorContentEl.appendChild(paneEl);
+                initReiheCalculator();
+            } else if (item.id === 'widerstand-parallel') {
+                paneEl.innerHTML = `
+                    <div class="calc-card">
+                        <h2><span style="color:var(--accent-color); font-family:var(--mono-font);">${item.icon}</span> ${item.name}</h2>
+                        <p>${item.desc}</p>
+                        <div style="padding: 25px; background-color: rgba(0,0,0,0.25); border-radius: 6px; border: 1px solid #444;">
+                            <div id="par-error-box" style="display:none; color: #ff5555; margin-bottom: 15px; padding: 10px; border: 1px solid rgba(255,85,85,0.4); border-radius: 4px; background: rgba(255,85,85,0.1); font-size: 13px;"></div>
+                            <div class="mock-input-group">
+                                <label>Widerstand R1 [Ω]</label>
+                                <input type="number" id="par-r1" class="mock-input" placeholder="Ohm" step="any">
+                            </div>
+                            <div class="mock-input-group">
+                                <label>Widerstand R2 [Ω]</label>
+                                <input type="number" id="par-r2" class="mock-input" placeholder="Ohm" step="any">
+                            </div>
+                            <div class="mock-input-group">
+                                <label>Widerstand R3 [Ω]</label>
+                                <input type="number" id="par-r3" class="mock-input" placeholder="Ohm" step="any">
+                            </div>
+                            <div class="mock-input-group">
+                                <label>Gesamtwiderstand R_ges [Ω]</label>
+                                <input type="number" id="par-rg" class="mock-input" placeholder="Ohm" step="any">
+                            </div>
+                            <div style="display: flex; gap: 10px; margin-top: 25px;">
+                                <button class="mock-button" id="par-calc-btn" style="opacity:1; cursor:pointer; flex: 1;">BERECHNEN</button>
+                                <button class="mock-button" id="par-clear-btn" style="opacity:1; cursor:pointer; background-color:#dc2626; flex: 0.3;">LEEREN</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                editorContentEl.appendChild(paneEl);
+                initParallelCalculator();
+            } else if (item.id === 'spannungsteiler') {
+                paneEl.innerHTML = `
+                    <div class="calc-card">
+                        <h2><span style="color:var(--accent-color); font-family:var(--mono-font);">${item.icon}</span> ${item.name}</h2>
+                        <p>${item.desc}</p>
+                        <div style="padding: 25px; background-color: rgba(0,0,0,0.25); border-radius: 6px; border: 1px solid #444;">
+                            <div id="vd-error-box" style="display:none; color: #ff5555; margin-bottom: 15px; padding: 10px; border: 1px solid rgba(255,85,85,0.4); border-radius: 4px; background: rgba(255,85,85,0.1); font-size: 13px;"></div>
+                            <div class="mock-input-group">
+                                <label>Eingangsspannung U_ein [V]</label>
+                                <input type="number" id="vd-uein" class="mock-input" placeholder="Volt" step="any">
+                            </div>
+                            <div class="mock-input-group">
+                                <label>Widerstand R1 [Ω]</label>
+                                <input type="number" id="vd-r1" class="mock-input" placeholder="Ohm" step="any">
+                            </div>
+                            <div class="mock-input-group">
+                                <label>Widerstand R2 [Ω]</label>
+                                <input type="number" id="vd-r2" class="mock-input" placeholder="Ohm" step="any">
+                            </div>
+                            <div class="mock-input-group">
+                                <label>Ausgangsspannung U_aus [V]</label>
+                                <input type="number" id="vd-uaus" class="mock-input" placeholder="Volt" step="any">
+                            </div>
+                            <div class="mock-input-group">
+                                <label>Strom I [A]</label>
+                                <input type="number" id="vd-i" class="mock-input" placeholder="Ampere" step="any">
+                            </div>
+                            <div style="display: flex; gap: 10px; margin-top: 25px;">
+                                <button class="mock-button" id="vd-calc-btn" style="opacity:1; cursor:pointer; flex: 1;">BERECHNEN</button>
+                                <button class="mock-button" id="vd-clear-btn" style="opacity:1; cursor:pointer; background-color:#dc2626; flex: 0.3;">LEEREN</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                editorContentEl.appendChild(paneEl);
+                initSpannungsteilerCalculator();
+            } else if (item.id === 'kondensator') {
+                paneEl.innerHTML = `
+                    <div class="calc-card">
+                        <h2><span style="color:var(--accent-color); font-family:var(--mono-font);">${item.icon}</span> ${item.name}</h2>
+                        <p>${item.desc}</p>
+                        <div style="padding: 25px; background-color: rgba(0,0,0,0.25); border-radius: 6px; border: 1px solid #444;">
+                            <div id="cap-error-box" style="display:none; color:#ff5555; margin-bottom:15px; padding:10px; border:1px solid rgba(255,85,85,0.4); border-radius:4px; background:rgba(255,85,85,0.1); font-size:13px;"></div>
+                            <div style="margin-bottom:18px; font-size:12px; color:var(--text-muted); font-family:var(--mono-font); padding:8px 10px; background:rgba(0,122,204,0.08); border-left:3px solid var(--accent-color); border-radius:0 4px 4px 0;">
+                                Präfixe für C: µ/u = 10⁻⁶ &nbsp;|&nbsp; n = 10⁻⁹ &nbsp;|&nbsp; p = 10⁻¹²<br>z.B. <strong>100µF</strong>, <strong>10nF</strong>, <strong>1pF</strong>, <strong>0.0001</strong> (in F)
+                            </div>
+                            <div class="mock-input-group">
+                                <label>Kapazität C [F]</label>
+                                <input type="text" id="cap-c" class="mock-input" placeholder="z.B. 100µF, 10nF, 1pF">
+                            </div>
+                            <div class="mock-input-group">
+                                <label>Spannung U [V]</label>
+                                <input type="number" id="cap-u" class="mock-input" placeholder="Volt" step="any">
+                            </div>
+                            <div class="mock-input-group">
+                                <label>Ladung Q [C]</label>
+                                <input type="number" id="cap-q" class="mock-input" placeholder="Coulomb" step="any">
+                            </div>
+                            <div class="mock-input-group">
+                                <label>Energie E [J]</label>
+                                <input type="number" id="cap-e" class="mock-input" placeholder="Joule" step="any">
+                            </div>
+                            <div style="display:flex; gap:10px; margin-top:25px;">
+                                <button class="mock-button" id="cap-calc-btn" style="opacity:1; cursor:pointer; flex:1;">BERECHNEN</button>
+                                <button class="mock-button" id="cap-clear-btn" style="opacity:1; cursor:pointer; background-color:#dc2626; flex:0.3;">LEEREN</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                editorContentEl.appendChild(paneEl);
+                initKondensatorCalculator();
+            } else if (item.id === 'energie-arbeit') {
+                paneEl.innerHTML = `
+                    <div class="calc-card">
+                        <h2><span style="color:var(--accent-color); font-family:var(--mono-font);">${item.icon}</span> ${item.name}</h2>
+                        <p>${item.desc}</p>
+                        <div style="padding:25px; background-color:rgba(0,0,0,0.25); border-radius:6px; border:1px solid #444;">
+                            <div id="ea-error-box" style="display:none; color:#ff5555; margin-bottom:15px; padding:10px; border:1px solid rgba(255,85,85,0.4); border-radius:4px; background:rgba(255,85,85,0.1); font-size:13px;"></div>
+                            <div class="mock-input-group">
+                                <label>Leistung P [W]</label>
+                                <input type="number" id="ea-p" class="mock-input" placeholder="Watt" step="any">
+                            </div>
+                            <div class="mock-input-group">
+                                <label>Zeit t [s]</label>
+                                <input type="number" id="ea-t" class="mock-input" placeholder="Sekunden" step="any">
+                            </div>
+                            <div class="mock-input-group">
+                                <label>Arbeit W [J]</label>
+                                <input type="number" id="ea-w" class="mock-input" placeholder="Joule" step="any">
+                            </div>
+                            <div class="mock-input-group">
+                                <label>Arbeit W [kWh]</label>
+                                <input type="number" id="ea-wkwh" class="mock-input" placeholder="Kilowattstunden" step="any">
+                            </div>
+                            <div style="display:flex; gap:10px; margin-top:25px;">
+                                <button class="mock-button" id="ea-calc-btn" style="opacity:1; cursor:pointer; flex:1;">BERECHNEN</button>
+                                <button class="mock-button" id="ea-clear-btn" style="opacity:1; cursor:pointer; background-color:#dc2626; flex:0.3;">LEEREN</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                editorContentEl.appendChild(paneEl);
+                initEnergieArbeitCalculator();
+            } else if (item.id === 'energiekosten') {
+                paneEl.innerHTML = `
+                    <div class="calc-card">
+                        <h2><span style="color:var(--accent-color); font-family:var(--mono-font);">${item.icon}</span> ${item.name}</h2>
+                        <p>${item.desc}</p>
+                        <div style="padding:25px; background-color:rgba(0,0,0,0.25); border-radius:6px; border:1px solid #444;">
+                            <div id="ek-error-box" style="display:none; color:#ff5555; margin-bottom:15px; padding:10px; border:1px solid rgba(255,85,85,0.4); border-radius:4px; background:rgba(255,85,85,0.1); font-size:13px;"></div>
+                            <div style="font-size:11px; text-transform:uppercase; font-weight:600; color:var(--text-muted); letter-spacing:0.05em; border-bottom:1px solid #3c3c3c; padding-bottom:5px; margin-bottom:14px;">Gerät</div>
+                            <div class="mock-input-group">
+                                <label>Leistung P [W]</label>
+                                <input type="number" id="ek-p" class="mock-input" placeholder="Watt" step="any">
+                            </div>
+                            <div style="font-size:11px; text-transform:uppercase; font-weight:600; color:var(--text-muted); letter-spacing:0.05em; border-bottom:1px solid #3c3c3c; padding-bottom:5px; margin:20px 0 14px;">Zeit</div>
+                            <div class="mock-input-group">
+                                <label>Stunden/Tag (Tagstrom) h_tag [h]</label>
+                                <input type="number" id="ek-htag" class="mock-input" placeholder="Stunden" step="any">
+                            </div>
+                            <div class="mock-input-group">
+                                <label>Stunden/Tag (Nachtstrom) h_nacht [h]</label>
+                                <input type="number" id="ek-hnacht" class="mock-input" placeholder="Stunden" step="any">
+                            </div>
+                            <div class="mock-input-group">
+                                <label>Anzahl Tage [d]</label>
+                                <input type="number" id="ek-tage" class="mock-input" placeholder="Tage" step="any">
+                            </div>
+                            <div style="font-size:11px; text-transform:uppercase; font-weight:600; color:var(--text-muted); letter-spacing:0.05em; border-bottom:1px solid #3c3c3c; padding-bottom:5px; margin:20px 0 14px;">Tarife</div>
+                            <div class="mock-input-group">
+                                <label>Preis Tagstrom pr_tag [Rp/kWh]</label>
+                                <input type="number" id="ek-prtag" class="mock-input" placeholder="Rappen/kWh" step="any">
+                            </div>
+                            <div class="mock-input-group">
+                                <label>Preis Nachtstrom pr_nacht [Rp/kWh]</label>
+                                <input type="number" id="ek-prnacht" class="mock-input" placeholder="Rappen/kWh" step="any">
+                            </div>
+                            <div style="font-size:11px; text-transform:uppercase; font-weight:600; color:var(--text-muted); letter-spacing:0.05em; border-bottom:1px solid #3c3c3c; padding-bottom:5px; margin:20px 0 14px;">Kosten</div>
+                            <div class="mock-input-group">
+                                <label>Kosten Tagstrom cost_tag [CHF]</label>
+                                <input type="number" id="ek-ctag" class="mock-input" placeholder="CHF" step="any">
+                            </div>
+                            <div class="mock-input-group">
+                                <label>Kosten Nachtstrom cost_nacht [CHF]</label>
+                                <input type="number" id="ek-cnacht" class="mock-input" placeholder="CHF" step="any">
+                            </div>
+                            <div class="mock-input-group">
+                                <label>Kosten Total cost_total [CHF]</label>
+                                <input type="number" id="ek-ctotal" class="mock-input" placeholder="CHF" step="any">
+                            </div>
+                            <div style="display:flex; gap:10px; margin-top:25px;">
+                                <button class="mock-button" id="ek-calc-btn" style="opacity:1; cursor:pointer; flex:1;">BERECHNEN</button>
+                                <button class="mock-button" id="ek-clear-btn" style="opacity:1; cursor:pointer; background-color:#dc2626; flex:0.3;">LEEREN</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                editorContentEl.appendChild(paneEl);
+                initEnergiekostenCalculator();
+            } else if (item.id === 'farbcode') {
+                paneEl.innerHTML = `
+                    <div class="calc-card">
+                        <h2><span style="color:var(--accent-color); font-family:var(--mono-font);">${item.icon}</span> ${item.name}</h2>
+                        <p>${item.desc}</p>
+                        <div style="display:flex; margin-bottom:24px; border:1px solid #444; border-radius:6px; overflow:hidden; font-size:13px; font-weight:600; user-select:none;">
+                            <div id="fc-tab-a" style="flex:1;text-align:center;padding:10px 14px;cursor:pointer;background:var(--accent-color);color:#fff;">▶ Farbe → Wert</div>
+                            <div id="fc-tab-b" style="flex:1;text-align:center;padding:10px 14px;cursor:pointer;background:#3c3c3c;color:#858585;">◀ Wert → Farbe</div>
+                        </div>
+                        <div id="fc-panel-a">
+                            <div id="fc-error-a" style="display:none; color:#ff5555; margin-bottom:15px; padding:10px; border:1px solid rgba(255,85,85,0.4); border-radius:4px; background:rgba(255,85,85,0.1); font-size:13px;"></div>
+                            <div class="mock-input-group">
+                                <label>Ring 1 — 1. Ziffer</label>
+                                <div style="display:flex; gap:8px; align-items:center;">
+                                    <div id="fc-sw-1" style="width:28px;height:28px;border-radius:4px;border:1px solid #555;flex-shrink:0;"></div>
+                                    <select id="fc-sel-1" class="mock-input" style="flex:1;min-width:0;"></select>
+                                </div>
+                            </div>
+                            <div class="mock-input-group">
+                                <label>Ring 2 — 2. Ziffer</label>
+                                <div style="display:flex; gap:8px; align-items:center;">
+                                    <div id="fc-sw-2" style="width:28px;height:28px;border-radius:4px;border:1px solid #555;flex-shrink:0;"></div>
+                                    <select id="fc-sel-2" class="mock-input" style="flex:1;min-width:0;"></select>
+                                </div>
+                            </div>
+                            <div class="mock-input-group">
+                                <label>Ring 3 — 3. Ziffer</label>
+                                <div style="display:flex; gap:8px; align-items:center;">
+                                    <div id="fc-sw-3" style="width:28px;height:28px;border-radius:4px;border:1px solid #555;flex-shrink:0;"></div>
+                                    <select id="fc-sel-3" class="mock-input" style="flex:1;min-width:0;"></select>
+                                </div>
+                            </div>
+                            <div class="mock-input-group">
+                                <label>Ring 4 — Multiplikator</label>
+                                <div style="display:flex; gap:8px; align-items:center;">
+                                    <div id="fc-sw-4" style="width:28px;height:28px;border-radius:4px;border:1px solid #555;flex-shrink:0;"></div>
+                                    <select id="fc-sel-4" class="mock-input" style="flex:1;min-width:0;"></select>
+                                </div>
+                            </div>
+                            <div class="mock-input-group">
+                                <label>Ring 5 — Toleranz (optional)</label>
+                                <div style="display:flex; gap:8px; align-items:center;">
+                                    <div id="fc-sw-5" style="width:28px;height:28px;border-radius:4px;border:1px solid #555;flex-shrink:0;"></div>
+                                    <select id="fc-sel-5" class="mock-input" style="flex:1;min-width:0;"></select>
+                                </div>
+                            </div>
+                            <div id="fc-result-a" style="margin-top:24px; padding:16px 20px; background:rgba(0,0,0,0.3); border-radius:6px; border:1px solid #444; font-family:var(--mono-font); font-size:16px; text-align:center; min-height:56px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;">—</div>
+                            <div style="margin-top:16px;">
+                                <button class="mock-button" id="fc-clear-a" style="opacity:1;cursor:pointer;background:#dc2626;">LEEREN</button>
+                            </div>
+                        </div>
+                        <div id="fc-panel-b" style="display:none;">
+                            <div id="fc-error-b" style="display:none; color:#ff5555; margin-bottom:15px; padding:10px; border:1px solid rgba(255,85,85,0.4); border-radius:4px; background:rgba(255,85,85,0.1); font-size:13px;"></div>
+                            <div class="mock-input-group">
+                                <label>Widerstandswert R</label>
+                                <input type="text" id="fc-b-inp" class="mock-input" placeholder="z.B. 4.7k, 100, 1.5M, 470Ω">
+                            </div>
+                            <div id="fc-rings-b" style="display:flex; gap:20px; justify-content:center; align-items:flex-end; margin:24px 0; min-height:96px;"></div>
+                            <div id="fc-result-b" style="text-align:center; font-family:var(--mono-font); font-size:18px; font-weight:bold; color:#60a5fa; margin-bottom:16px;"></div>
+                            <div style="display:flex; gap:10px;">
+                                <button class="mock-button" id="fc-calc-b" style="opacity:1;cursor:pointer;flex:1;">BERECHNEN</button>
+                                <button class="mock-button" id="fc-clear-b" style="opacity:1;cursor:pointer;background:#dc2626;flex:0.3;">LEEREN</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                editorContentEl.appendChild(paneEl);
+                initFarbcodeCalculator();
+            } else if (item.id === 'batterie') {
+                paneEl.innerHTML = `
+                    <div class="calc-card">
+                        <h2><span style="color:var(--accent-color); font-family:var(--mono-font);">${item.icon}</span> ${item.name}</h2>
+                        <p>${item.desc}</p>
+                        <div style="padding:25px; background-color:rgba(0,0,0,0.25); border-radius:6px; border:1px solid #444;">
+                            <div id="bat-error-box" style="display:none; color:#ff5555; margin-bottom:15px; padding:10px; border:1px solid rgba(255,85,85,0.4); border-radius:4px; background:rgba(255,85,85,0.1); font-size:13px;"></div>
+                            <div style="font-size:11px;text-transform:uppercase;font-weight:600;color:var(--text-muted);letter-spacing:0.05em;border-bottom:1px solid #3c3c3c;padding-bottom:5px;margin-bottom:14px;">Quelle</div>
+                            <div class="mock-input-group">
+                                <label>Leerlaufspannung / EMK &nbsp; E [V]</label>
+                                <input type="number" id="bat-e" class="mock-input" placeholder="Volt" step="any">
+                            </div>
+                            <div class="mock-input-group">
+                                <label>Innenwiderstand &nbsp; Ri [Ω]</label>
+                                <input type="number" id="bat-ri" class="mock-input" placeholder="Ohm" step="any">
+                            </div>
+                            <div class="mock-input-group">
+                                <label>Kurzschlussstrom &nbsp; Isc [A]</label>
+                                <input type="number" id="bat-isc" class="mock-input" placeholder="Ampere" step="any">
+                            </div>
+                            <div style="font-size:11px;text-transform:uppercase;font-weight:600;color:var(--text-muted);letter-spacing:0.05em;border-bottom:1px solid #3c3c3c;padding-bottom:5px;margin:20px 0 14px;">Last</div>
+                            <div class="mock-input-group">
+                                <label>Außenwiderstand &nbsp; Ra [Ω]</label>
+                                <input type="number" id="bat-ra" class="mock-input" placeholder="Ohm" step="any">
+                            </div>
+                            <div class="mock-input-group">
+                                <label>Klemmspannung &nbsp; Uk [V]</label>
+                                <input type="number" id="bat-uk" class="mock-input" placeholder="Volt" step="any">
+                            </div>
+                            <div class="mock-input-group">
+                                <label>Strom &nbsp; I [A]</label>
+                                <input type="number" id="bat-i" class="mock-input" placeholder="Ampere" step="any">
+                            </div>
+                            <div style="font-size:11px;text-transform:uppercase;font-weight:600;color:var(--text-muted);letter-spacing:0.05em;border-bottom:1px solid #3c3c3c;padding-bottom:5px;margin:20px 0 14px;">Leistung</div>
+                            <div class="mock-input-group">
+                                <label>Nutzleistung &nbsp; Pa [W]</label>
+                                <input type="number" id="bat-pa" class="mock-input" placeholder="Watt" step="any">
+                            </div>
+                            <div class="mock-input-group">
+                                <label>Verlustleistung &nbsp; Pi [W]</label>
+                                <input type="number" id="bat-pi" class="mock-input" placeholder="Watt" step="any">
+                            </div>
+                            <div class="mock-input-group">
+                                <label>Gesamtleistung &nbsp; P_ges [W]</label>
+                                <input type="number" id="bat-pges" class="mock-input" placeholder="Watt" step="any">
+                            </div>
+                            <div style="display:flex; gap:10px; margin-top:25px;">
+                                <button class="mock-button" id="bat-calc-btn" style="opacity:1;cursor:pointer;flex:1;">BERECHNEN</button>
+                                <button class="mock-button" id="bat-clear-btn" style="opacity:1;cursor:pointer;background:#dc2626;flex:0.3;">LEEREN</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                editorContentEl.appendChild(paneEl);
+                initBatterieCalculator();
             } else if (item.id === 'schaltungsbauer') {
                 paneEl.style.maxWidth = 'none';
                 paneEl.style.padding = '0';
@@ -1711,6 +2097,759 @@
             canvas.addEventListener('click', bkOnClick);
             new ResizeObserver(() => bkRedraw()).observe(canvas.parentElement);
             bkReset();
+        }
+
+        // ===== LEISTUNG =====
+        function initLeistungCalculator() {
+            const inputs = {
+                U: document.getElementById('pwr-u'),
+                I: document.getElementById('pwr-i'),
+                R: document.getElementById('pwr-r'),
+                P: document.getElementById('pwr-p')
+            };
+            const btnCalc = document.getElementById('pwr-calc-btn');
+            const btnClear = document.getElementById('pwr-clear-btn');
+            const errBox  = document.getElementById('pwr-error-box');
+
+            Object.values(inputs).forEach(inp => {
+                inp.addEventListener('input', () => { inp.style.color = 'var(--text-normal)'; inp.style.fontWeight = 'normal'; errBox.style.display = 'none'; });
+                inp.addEventListener('keydown', e => { if (e.key === 'Enter') calc(); });
+            });
+            btnClear.addEventListener('click', () => {
+                Object.values(inputs).forEach(inp => { inp.value = ''; inp.style.color = 'var(--text-normal)'; inp.style.fontWeight = 'normal'; });
+                errBox.style.display = 'none';
+            });
+            btnCalc.addEventListener('click', calc);
+
+            function calc() {
+                errBox.style.display = 'none';
+                const v = {};
+                for (const k in inputs) { const s = inputs[k].value.trim(); v[k] = s !== '' ? parseFloat(s.replace(',', '.')) : null; }
+                const orig = { ...v };
+                const errs = [];
+                if (v.R !== null && v.R <= 0) errs.push('Widerstand R muss > 0 sein.');
+                if (v.U !== null && v.U < 0)  errs.push('Spannung U darf nicht negativ sein.');
+                if (v.I !== null && v.I < 0)  errs.push('Strom I darf nicht negativ sein.');
+                if (v.P !== null && v.P < 0)  errs.push('Leistung P darf nicht negativ sein.');
+                if (errs.length) { showErr(errs.join('<br>')); return; }
+                if (Object.values(orig).filter(x => x !== null).length < 2) { showErr('Bitte mindestens 2 Werte eingeben.'); return; }
+
+                for (let i = 0; i < 5; i++) {
+                    const prev = JSON.stringify(v);
+                    if (v.R !== null && v.I !== null && v.U === null) v.U = v.R * v.I;
+                    if (v.U !== null && v.R !== null && v.I === null && v.R !== 0) v.I = v.U / v.R;
+                    if (v.U !== null && v.I !== null && v.R === null && v.I !== 0) v.R = v.U / v.I;
+                    if (v.U !== null && v.I !== null && v.P === null) v.P = v.U * v.I;
+                    if (v.U !== null && v.R !== null && v.P === null && v.R !== 0) v.P = v.U ** 2 / v.R;
+                    if (v.I !== null && v.R !== null && v.P === null) v.P = v.I ** 2 * v.R;
+                    if (v.P !== null && v.U !== null && v.I === null && v.U !== 0) v.I = v.P / v.U;
+                    if (v.P !== null && v.I !== null && v.U === null && v.I !== 0) v.U = v.P / v.I;
+                    if (v.P !== null && v.I !== null && v.R === null && v.I !== 0) v.R = v.P / v.I ** 2;
+                    if (v.U !== null && v.P !== null && v.R === null && v.P !== 0) v.R = v.U ** 2 / v.P;
+                    if (v.P !== null && v.R !== null && v.P >= 0 && v.R > 0) {
+                        if (v.I === null) v.I = Math.sqrt(v.P / v.R);
+                        if (v.U === null) v.U = Math.sqrt(v.P * v.R);
+                    }
+                    if (JSON.stringify(v) === prev) break;
+                }
+                const fmt = x => x === null || isNaN(x) ? '' : parseFloat(x.toPrecision(5)).toString();
+                for (const k in v) {
+                    if (v[k] !== null && !isNaN(v[k])) {
+                        inputs[k].value = fmt(v[k]);
+                        if (orig[k] === null) { inputs[k].style.color = '#60a5fa'; inputs[k].style.fontWeight = 'bold'; }
+                    }
+                }
+            }
+            function showErr(msg) { errBox.innerHTML = msg; errBox.style.display = 'block'; }
+        }
+
+        // ===== WIDERSTAND REIHENSCHALTUNG =====
+        function initReiheCalculator() {
+            const inputs = {
+                R1: document.getElementById('reihe-r1'),
+                R2: document.getElementById('reihe-r2'),
+                R3: document.getElementById('reihe-r3'),
+                Rg: document.getElementById('reihe-rg')
+            };
+            const btnCalc = document.getElementById('reihe-calc-btn');
+            const btnClear = document.getElementById('reihe-clear-btn');
+            const errBox  = document.getElementById('reihe-error-box');
+
+            Object.values(inputs).forEach(inp => {
+                inp.addEventListener('input', () => { inp.style.color = 'var(--text-normal)'; inp.style.fontWeight = 'normal'; errBox.style.display = 'none'; });
+                inp.addEventListener('keydown', e => { if (e.key === 'Enter') calc(); });
+            });
+            btnClear.addEventListener('click', () => {
+                Object.values(inputs).forEach(inp => { inp.value = ''; inp.style.color = 'var(--text-normal)'; inp.style.fontWeight = 'normal'; });
+                errBox.style.display = 'none';
+            });
+            btnCalc.addEventListener('click', calc);
+
+            function calc() {
+                errBox.style.display = 'none';
+                const v = {};
+                for (const k in inputs) { const s = inputs[k].value.trim(); v[k] = s !== '' ? parseFloat(s.replace(',', '.')) : null; }
+                const orig = { ...v };
+                for (const k in v) { if (v[k] !== null && v[k] < 0) { showErr(`${k} darf nicht negativ sein.`); return; } }
+                const nullCount = Object.values(v).filter(x => x === null).length;
+                if (nullCount !== 1) { showErr('Bitte genau 3 Werte eingeben.'); return; }
+
+                if      (v.Rg === null) v.Rg = v.R1 + v.R2 + v.R3;
+                else if (v.R1 === null) v.R1 = v.Rg - v.R2 - v.R3;
+                else if (v.R2 === null) v.R2 = v.Rg - v.R1 - v.R3;
+                else if (v.R3 === null) v.R3 = v.Rg - v.R1 - v.R2;
+
+                for (const k in v) { if (v[k] !== null && v[k] < 0) { showErr(`Ergebnis ${k} ist negativ — Werte prüfen.`); return; } }
+                const fmt = x => x === null || isNaN(x) ? '' : parseFloat(x.toPrecision(5)).toString();
+                for (const k in v) {
+                    if (v[k] !== null && !isNaN(v[k])) {
+                        inputs[k].value = fmt(v[k]);
+                        if (orig[k] === null) { inputs[k].style.color = '#60a5fa'; inputs[k].style.fontWeight = 'bold'; }
+                    }
+                }
+            }
+            function showErr(msg) { errBox.innerHTML = msg; errBox.style.display = 'block'; }
+        }
+
+        // ===== WIDERSTAND PARALLELSCHALTUNG =====
+        function initParallelCalculator() {
+            const inputs = {
+                R1: document.getElementById('par-r1'),
+                R2: document.getElementById('par-r2'),
+                R3: document.getElementById('par-r3'),
+                Rg: document.getElementById('par-rg')
+            };
+            const btnCalc = document.getElementById('par-calc-btn');
+            const btnClear = document.getElementById('par-clear-btn');
+            const errBox  = document.getElementById('par-error-box');
+
+            Object.values(inputs).forEach(inp => {
+                inp.addEventListener('input', () => { inp.style.color = 'var(--text-normal)'; inp.style.fontWeight = 'normal'; errBox.style.display = 'none'; });
+                inp.addEventListener('keydown', e => { if (e.key === 'Enter') calc(); });
+            });
+            btnClear.addEventListener('click', () => {
+                Object.values(inputs).forEach(inp => { inp.value = ''; inp.style.color = 'var(--text-normal)'; inp.style.fontWeight = 'normal'; });
+                errBox.style.display = 'none';
+            });
+            btnCalc.addEventListener('click', calc);
+
+            function calc() {
+                errBox.style.display = 'none';
+                const v = {};
+                for (const k in inputs) { const s = inputs[k].value.trim(); v[k] = s !== '' ? parseFloat(s.replace(',', '.')) : null; }
+                const orig = { ...v };
+                for (const k in v) { if (v[k] !== null && v[k] <= 0) { showErr(`${k} muss > 0 sein.`); return; } }
+                const nullCount = Object.values(v).filter(x => x === null).length;
+                if (nullCount !== 1) { showErr('Bitte genau 3 Werte eingeben.'); return; }
+
+                if (v.Rg === null) {
+                    v.Rg = 1 / (1/v.R1 + 1/v.R2 + 1/v.R3);
+                } else {
+                    const invRg = 1 / v.Rg;
+                    if (v.R1 === null) {
+                        const inv = invRg - 1/v.R2 - 1/v.R3;
+                        if (inv <= 0) { showErr('Kein gültiges Ergebnis für R1.'); return; }
+                        v.R1 = 1 / inv;
+                    } else if (v.R2 === null) {
+                        const inv = invRg - 1/v.R1 - 1/v.R3;
+                        if (inv <= 0) { showErr('Kein gültiges Ergebnis für R2.'); return; }
+                        v.R2 = 1 / inv;
+                    } else {
+                        const inv = invRg - 1/v.R1 - 1/v.R2;
+                        if (inv <= 0) { showErr('Kein gültiges Ergebnis für R3.'); return; }
+                        v.R3 = 1 / inv;
+                    }
+                }
+                const fmt = x => x === null || isNaN(x) ? '' : parseFloat(x.toPrecision(5)).toString();
+                for (const k in v) {
+                    if (v[k] !== null && !isNaN(v[k])) {
+                        inputs[k].value = fmt(v[k]);
+                        if (orig[k] === null) { inputs[k].style.color = '#60a5fa'; inputs[k].style.fontWeight = 'bold'; }
+                    }
+                }
+            }
+            function showErr(msg) { errBox.innerHTML = msg; errBox.style.display = 'block'; }
+        }
+
+        // ===== SPANNUNGSTEILER =====
+        function initSpannungsteilerCalculator() {
+            const inputs = {
+                Uein: document.getElementById('vd-uein'),
+                R1:   document.getElementById('vd-r1'),
+                R2:   document.getElementById('vd-r2'),
+                Uaus: document.getElementById('vd-uaus'),
+                I:    document.getElementById('vd-i')
+            };
+            const btnCalc = document.getElementById('vd-calc-btn');
+            const btnClear = document.getElementById('vd-clear-btn');
+            const errBox  = document.getElementById('vd-error-box');
+
+            Object.values(inputs).forEach(inp => {
+                inp.addEventListener('input', () => { inp.style.color = 'var(--text-normal)'; inp.style.fontWeight = 'normal'; errBox.style.display = 'none'; });
+                inp.addEventListener('keydown', e => { if (e.key === 'Enter') calc(); });
+            });
+            btnClear.addEventListener('click', () => {
+                Object.values(inputs).forEach(inp => { inp.value = ''; inp.style.color = 'var(--text-normal)'; inp.style.fontWeight = 'normal'; });
+                errBox.style.display = 'none';
+            });
+            btnCalc.addEventListener('click', calc);
+
+            function calc() {
+                errBox.style.display = 'none';
+                const v = {};
+                for (const k in inputs) { const s = inputs[k].value.trim(); v[k] = s !== '' ? parseFloat(s.replace(',', '.')) : null; }
+                const orig = { ...v };
+                if (v.R1   !== null && v.R1   <= 0) { showErr('R1 muss > 0 sein.');                     return; }
+                if (v.R2   !== null && v.R2   <= 0) { showErr('R2 muss > 0 sein.');                     return; }
+                if (v.I    !== null && v.I    <  0) { showErr('I darf nicht negativ sein.');             return; }
+                if (v.Uein !== null && v.Uein <  0) { showErr('U_ein darf nicht negativ sein.');         return; }
+                if (v.Uaus !== null && v.Uaus <  0) { showErr('U_aus darf nicht negativ sein.');         return; }
+                if (v.Uein !== null && v.Uaus !== null && v.Uaus >= v.Uein) { showErr('U_aus muss kleiner als U_ein sein.'); return; }
+                if (Object.values(orig).filter(x => x !== null).length < 2) { showErr('Bitte mindestens 2 Werte eingeben.'); return; }
+
+                for (let i = 0; i < 8; i++) {
+                    const prev = JSON.stringify(v);
+                    if (v.Uein !== null && v.R1 !== null && v.R2 !== null && v.I === null)
+                        v.I = v.Uein / (v.R1 + v.R2);
+                    if (v.Uaus !== null && v.R2 !== null && v.R2 !== 0 && v.I === null)
+                        v.I = v.Uaus / v.R2;
+                    if (v.Uein !== null && v.Uaus !== null && v.R1 !== null && v.I === null && v.R1 !== 0)
+                        v.I = (v.Uein - v.Uaus) / v.R1;
+                    if (v.I !== null && v.R2 !== null && v.Uaus === null)
+                        v.Uaus = v.I * v.R2;
+                    if (v.I !== null && v.R1 !== null && v.R2 !== null && v.Uein === null)
+                        v.Uein = v.I * (v.R1 + v.R2);
+                    if (v.I !== null && v.I !== 0 && v.Uaus !== null && v.R2 === null)
+                        v.R2 = v.Uaus / v.I;
+                    if (v.Uein !== null && v.Uaus !== null && v.I !== null && v.I !== 0 && v.R1 === null)
+                        v.R1 = (v.Uein - v.Uaus) / v.I;
+                    if (v.Uein !== null && v.Uaus !== null && v.R1 !== null && v.R2 === null) {
+                        const diff = v.Uein - v.Uaus;
+                        if (diff > 0) v.R2 = v.R1 * v.Uaus / diff;
+                    }
+                    if (v.Uein !== null && v.Uaus !== null && v.R2 !== null && v.R1 === null && v.Uaus !== 0)
+                        v.R1 = v.R2 * (v.Uein - v.Uaus) / v.Uaus;
+                    if (v.Uaus !== null && v.R1 !== null && v.R2 !== null && v.Uein === null && v.R2 !== 0)
+                        v.Uein = v.Uaus * (v.R1 + v.R2) / v.R2;
+                    if (v.Uein !== null && v.I !== null && v.I !== 0) {
+                        const Rg = v.Uein / v.I;
+                        if (v.R1 !== null && v.R2 === null) v.R2 = Rg - v.R1;
+                        if (v.R2 !== null && v.R1 === null) v.R1 = Rg - v.R2;
+                    }
+                    if (JSON.stringify(v) === prev) break;
+                }
+                const fmt = x => x === null || isNaN(x) ? '' : parseFloat(x.toPrecision(5)).toString();
+                for (const k in v) {
+                    if (v[k] !== null && !isNaN(v[k])) {
+                        inputs[k].value = fmt(v[k]);
+                        if (orig[k] === null) { inputs[k].style.color = '#60a5fa'; inputs[k].style.fontWeight = 'bold'; }
+                    }
+                }
+            }
+            function showErr(msg) { errBox.innerHTML = msg; errBox.style.display = 'block'; }
+        }
+
+        // ===== KONDENSATOR =====
+        function initKondensatorCalculator() {
+            const capInp = document.getElementById('cap-c');
+            const inputs = {
+                C: capInp,
+                U: document.getElementById('cap-u'),
+                Q: document.getElementById('cap-q'),
+                E: document.getElementById('cap-e')
+            };
+            const btnCalc = document.getElementById('cap-calc-btn');
+            const btnClear = document.getElementById('cap-clear-btn');
+            const errBox  = document.getElementById('cap-error-box');
+
+            function parseCapC(str) {
+                if (!str) return null;
+                str = str.replace(',', '.').trim();
+                // Strip trailing unit letter(s) like F, Ω, V, A, J
+                str = str.replace(/[FVCJAWΩHz]+$/i, '').trim();
+                if (!str) return null;
+                return bkParseVal(str);
+            }
+            function parseNum(str) {
+                if (!str && str !== 0) return null;
+                const v = parseFloat(String(str).replace(',', '.'));
+                return isNaN(v) ? null : v;
+            }
+
+            Object.values(inputs).forEach(inp => {
+                inp.addEventListener('input', () => { inp.style.color = 'var(--text-normal)'; inp.style.fontWeight = 'normal'; errBox.style.display = 'none'; });
+                inp.addEventListener('keydown', e => { if (e.key === 'Enter') calc(); });
+            });
+            btnClear.addEventListener('click', () => {
+                Object.values(inputs).forEach(inp => { inp.value = ''; inp.style.color = 'var(--text-normal)'; inp.style.fontWeight = 'normal'; });
+                errBox.style.display = 'none';
+            });
+            btnCalc.addEventListener('click', calc);
+
+            function calc() {
+                errBox.style.display = 'none';
+                const v = {
+                    C: parseCapC(capInp.value),
+                    U: parseNum(inputs.U.value.trim() !== '' ? inputs.U.value : null),
+                    Q: parseNum(inputs.Q.value.trim() !== '' ? inputs.Q.value : null),
+                    E: parseNum(inputs.E.value.trim() !== '' ? inputs.E.value : null)
+                };
+                const orig = { ...v };
+
+                if (v.C !== null && v.C <= 0) { showErr('C muss > 0 sein.'); return; }
+                if (v.U !== null && v.U < 0)  { showErr('U darf nicht negativ sein.'); return; }
+                if (v.Q !== null && v.Q < 0)  { showErr('Q darf nicht negativ sein.'); return; }
+                if (v.E !== null && v.E < 0)  { showErr('E darf nicht negativ sein.'); return; }
+                if (Object.values(orig).filter(x => x !== null).length < 2) { showErr('Bitte mindestens 2 Werte eingeben.'); return; }
+
+                for (let i = 0; i < 6; i++) {
+                    const prev = JSON.stringify(v);
+                    // Q = C·U
+                    if (v.C !== null && v.U !== null && v.Q === null) v.Q = v.C * v.U;
+                    if (v.Q !== null && v.U !== null && v.C === null && v.U !== 0) v.C = v.Q / v.U;
+                    if (v.Q !== null && v.C !== null && v.U === null && v.C !== 0) v.U = v.Q / v.C;
+                    // E = ½·C·U²
+                    if (v.C !== null && v.U !== null && v.E === null) v.E = 0.5 * v.C * v.U ** 2;
+                    if (v.E !== null && v.C !== null && v.U === null && v.C !== 0) v.U = Math.sqrt(2 * v.E / v.C);
+                    if (v.E !== null && v.U !== null && v.C === null && v.U !== 0) v.C = 2 * v.E / v.U ** 2;
+                    // E = Q²/(2C)
+                    if (v.Q !== null && v.C !== null && v.E === null && v.C !== 0) v.E = v.Q ** 2 / (2 * v.C);
+                    if (v.E !== null && v.Q !== null && v.C === null && v.E !== 0) v.C = v.Q ** 2 / (2 * v.E);
+                    // E = ½·Q·U  →  U = 2E/Q, Q = 2E/U
+                    if (v.E !== null && v.Q !== null && v.U === null && v.Q !== 0) v.U = 2 * v.E / v.Q;
+                    if (v.E !== null && v.U !== null && v.Q === null && v.U !== 0) v.Q = 2 * v.E / v.U;
+                    if (JSON.stringify(v) === prev) break;
+                }
+
+                const fmt = x => x === null || !isFinite(x) ? '' : parseFloat(x.toPrecision(5)).toString();
+                for (const k in v) {
+                    if (v[k] !== null && isFinite(v[k])) {
+                        inputs[k].value = fmt(v[k]);
+                        if (orig[k] === null) { inputs[k].style.color = '#60a5fa'; inputs[k].style.fontWeight = 'bold'; }
+                    }
+                }
+            }
+            function showErr(msg) { errBox.innerHTML = msg; errBox.style.display = 'block'; }
+        }
+
+        // ===== ENERGIE & ARBEIT =====
+        function initEnergieArbeitCalculator() {
+            const inputs = {
+                P:    document.getElementById('ea-p'),
+                t:    document.getElementById('ea-t'),
+                W:    document.getElementById('ea-w'),
+                Wkwh: document.getElementById('ea-wkwh')
+            };
+            const btnCalc = document.getElementById('ea-calc-btn');
+            const btnClear = document.getElementById('ea-clear-btn');
+            const errBox  = document.getElementById('ea-error-box');
+
+            Object.values(inputs).forEach(inp => {
+                inp.addEventListener('input', () => { inp.style.color = 'var(--text-normal)'; inp.style.fontWeight = 'normal'; errBox.style.display = 'none'; });
+                inp.addEventListener('keydown', e => { if (e.key === 'Enter') calc(); });
+            });
+            btnClear.addEventListener('click', () => {
+                Object.values(inputs).forEach(inp => { inp.value = ''; inp.style.color = 'var(--text-normal)'; inp.style.fontWeight = 'normal'; });
+                errBox.style.display = 'none';
+            });
+            btnCalc.addEventListener('click', calc);
+
+            function calc() {
+                errBox.style.display = 'none';
+                const v = {};
+                for (const k in inputs) { const s = inputs[k].value.trim(); v[k] = s !== '' ? parseFloat(s.replace(',', '.')) : null; }
+                const orig = { ...v };
+
+                if (v.P !== null && v.P < 0)    { showErr('P darf nicht negativ sein.'); return; }
+                if (v.t !== null && v.t <= 0)    { showErr('t muss > 0 sein.'); return; }
+                if (v.W !== null && v.W < 0)     { showErr('W darf nicht negativ sein.'); return; }
+                if (v.Wkwh !== null && v.Wkwh < 0) { showErr('W_kWh darf nicht negativ sein.'); return; }
+                if (Object.values(orig).filter(x => x !== null).length < 2) { showErr('Bitte mindestens 2 Werte eingeben.'); return; }
+
+                for (let i = 0; i < 6; i++) {
+                    const prev = JSON.stringify(v);
+                    // W ↔ W_kWh
+                    if (v.W !== null && v.Wkwh === null)    v.Wkwh = v.W / 3600000;
+                    if (v.Wkwh !== null && v.W === null)    v.W    = v.Wkwh * 3600000;
+                    // W = P·t
+                    if (v.P !== null && v.t !== null && v.W === null)    v.W = v.P * v.t;
+                    if (v.W !== null && v.t !== null && v.P === null && v.t !== 0) v.P = v.W / v.t;
+                    if (v.W !== null && v.P !== null && v.t === null && v.P !== 0) v.t = v.W / v.P;
+                    if (JSON.stringify(v) === prev) break;
+                }
+
+                const fmt = x => x === null || !isFinite(x) ? '' : parseFloat(x.toPrecision(5)).toString();
+                for (const k in v) {
+                    if (v[k] !== null && isFinite(v[k])) {
+                        inputs[k].value = fmt(v[k]);
+                        if (orig[k] === null) { inputs[k].style.color = '#60a5fa'; inputs[k].style.fontWeight = 'bold'; }
+                    }
+                }
+            }
+            function showErr(msg) { errBox.innerHTML = msg; errBox.style.display = 'block'; }
+        }
+
+        // ===== ENERGIEKOSTEN =====
+        function initEnergiekostenCalculator() {
+            const inputs = {
+                P:      document.getElementById('ek-p'),
+                htag:   document.getElementById('ek-htag'),
+                hnacht: document.getElementById('ek-hnacht'),
+                tage:   document.getElementById('ek-tage'),
+                prtag:  document.getElementById('ek-prtag'),
+                prnacht:document.getElementById('ek-prnacht'),
+                ctag:   document.getElementById('ek-ctag'),
+                cnacht: document.getElementById('ek-cnacht'),
+                ctotal: document.getElementById('ek-ctotal')
+            };
+            const btnCalc = document.getElementById('ek-calc-btn');
+            const btnClear = document.getElementById('ek-clear-btn');
+            const errBox  = document.getElementById('ek-error-box');
+
+            Object.values(inputs).forEach(inp => {
+                inp.addEventListener('input', () => { inp.style.color = 'var(--text-normal)'; inp.style.fontWeight = 'normal'; errBox.style.display = 'none'; });
+                inp.addEventListener('keydown', e => { if (e.key === 'Enter') calc(); });
+            });
+            btnClear.addEventListener('click', () => {
+                Object.values(inputs).forEach(inp => { inp.value = ''; inp.style.color = 'var(--text-normal)'; inp.style.fontWeight = 'normal'; });
+                errBox.style.display = 'none';
+            });
+            btnCalc.addEventListener('click', calc);
+
+            function calc() {
+                errBox.style.display = 'none';
+                const v = {};
+                for (const k in inputs) { const s = inputs[k].value.trim(); v[k] = s !== '' ? parseFloat(s.replace(',', '.')) : null; }
+                const orig = { ...v };
+
+                const pos = ['P','htag','hnacht','tage','prtag','prnacht','ctag','cnacht','ctotal'];
+                for (const k of pos) { if (v[k] !== null && v[k] < 0) { showErr(`${k} darf nicht negativ sein.`); return; } }
+                if (Object.values(orig).filter(x => x !== null).length < 2) { showErr('Bitte mindestens 2 Werte eingeben.'); return; }
+
+                // cost = P[W] · h[h] · tage · pr[Rp/kWh] / 100000
+                // (1 kWh = 1000 Wh; 1 CHF = 100 Rp → factor = 1/1000/100 = 1/100000)
+                for (let i = 0; i < 10; i++) {
+                    const prev = JSON.stringify(v);
+
+                    // cost_tag = P · htag · tage · prtag / 100000
+                    const kt = (a, b, c, d) => a * b * c * d / 100000;
+                    const nn = (...xs) => xs.every(x => x !== null && x !== 0);
+
+                    if (v.P !== null && v.htag !== null && v.tage !== null && v.prtag !== null && v.ctag === null)
+                        v.ctag = kt(v.P, v.htag, v.tage, v.prtag);
+                    if (v.ctag !== null && v.htag !== null && v.tage !== null && v.prtag !== null && v.P === null && nn(v.htag, v.tage, v.prtag))
+                        v.P = v.ctag * 100000 / (v.htag * v.tage * v.prtag);
+                    if (v.ctag !== null && v.P !== null && v.tage !== null && v.prtag !== null && v.htag === null && nn(v.P, v.tage, v.prtag))
+                        v.htag = v.ctag * 100000 / (v.P * v.tage * v.prtag);
+                    if (v.ctag !== null && v.P !== null && v.htag !== null && v.prtag !== null && v.tage === null && nn(v.P, v.htag, v.prtag))
+                        v.tage = v.ctag * 100000 / (v.P * v.htag * v.prtag);
+                    if (v.ctag !== null && v.P !== null && v.htag !== null && v.tage !== null && v.prtag === null && nn(v.P, v.htag, v.tage))
+                        v.prtag = v.ctag * 100000 / (v.P * v.htag * v.tage);
+
+                    // cost_nacht = P · hnacht · tage · prnacht / 100000
+                    if (v.P !== null && v.hnacht !== null && v.tage !== null && v.prnacht !== null && v.cnacht === null)
+                        v.cnacht = kt(v.P, v.hnacht, v.tage, v.prnacht);
+                    if (v.cnacht !== null && v.hnacht !== null && v.tage !== null && v.prnacht !== null && v.P === null && nn(v.hnacht, v.tage, v.prnacht))
+                        v.P = v.cnacht * 100000 / (v.hnacht * v.tage * v.prnacht);
+                    if (v.cnacht !== null && v.P !== null && v.tage !== null && v.prnacht !== null && v.hnacht === null && nn(v.P, v.tage, v.prnacht))
+                        v.hnacht = v.cnacht * 100000 / (v.P * v.tage * v.prnacht);
+                    if (v.cnacht !== null && v.P !== null && v.hnacht !== null && v.prnacht !== null && v.tage === null && nn(v.P, v.hnacht, v.prnacht))
+                        v.tage = v.cnacht * 100000 / (v.P * v.hnacht * v.prnacht);
+                    if (v.cnacht !== null && v.P !== null && v.hnacht !== null && v.tage !== null && v.prnacht === null && nn(v.P, v.hnacht, v.tage))
+                        v.prnacht = v.cnacht * 100000 / (v.P * v.hnacht * v.tage);
+
+                    // cost_total = cost_tag + cost_nacht
+                    if (v.ctag !== null && v.cnacht !== null && v.ctotal === null) v.ctotal = v.ctag + v.cnacht;
+                    if (v.ctotal !== null && v.ctag !== null && v.cnacht === null) v.cnacht = v.ctotal - v.ctag;
+                    if (v.ctotal !== null && v.cnacht !== null && v.ctag === null) v.ctag = v.ctotal - v.cnacht;
+
+                    if (JSON.stringify(v) === prev) break;
+                }
+
+                const fmt = x => x === null || !isFinite(x) ? '' : parseFloat(x.toPrecision(5)).toString();
+                for (const k in v) {
+                    if (v[k] !== null && isFinite(v[k])) {
+                        inputs[k].value = fmt(v[k]);
+                        if (orig[k] === null) { inputs[k].style.color = '#60a5fa'; inputs[k].style.fontWeight = 'bold'; }
+                    }
+                }
+            }
+            function showErr(msg) { errBox.innerHTML = msg; errBox.style.display = 'block'; }
+        }
+
+        // ===== WIDERSTAND FARBCODE =====
+        function initFarbcodeCalculator() {
+            const FC = [
+                { name: 'Schwarz', digit: 0, mult: 1,      tol: null,       hex: '#000000' },
+                { name: 'Braun',   digit: 1, mult: 10,     tol: '±1%',      hex: '#8B4513' },
+                { name: 'Rot',     digit: 2, mult: 100,    tol: '±2%',      hex: '#CC2200' },
+                { name: 'Orange',  digit: 3, mult: 1e3,    tol: null,       hex: '#FF8C00' },
+                { name: 'Gelb',    digit: 4, mult: 1e4,    tol: null,       hex: '#DDCC00' },
+                { name: 'Grün',    digit: 5, mult: 1e5,    tol: '±0.5%',    hex: '#007700' },
+                { name: 'Blau',    digit: 6, mult: 1e6,    tol: '±0.25%',   hex: '#0044CC' },
+                { name: 'Violett', digit: 7, mult: 1e7,    tol: '±0.1%',    hex: '#7700BB' },
+                { name: 'Grau',    digit: 8, mult: 1e8,    tol: '±0.05%',   hex: '#888888' },
+                { name: 'Weiß',    digit: 9, mult: 1e9,    tol: null,       hex: '#E8E8E8' },
+                { name: 'Gold',    digit: null, mult: 0.1, tol: '±5%',      hex: '#CCAA00' },
+                { name: 'Silber',  digit: null, mult: 0.01,tol: '±10%',     hex: '#AAAAAA' },
+            ];
+            const digits = FC.filter(c => c.digit !== null);
+            const tols   = FC.filter(c => c.tol   !== null);
+
+            // Tab switching
+            const tabA = document.getElementById('fc-tab-a');
+            const tabB = document.getElementById('fc-tab-b');
+            const panA = document.getElementById('fc-panel-a');
+            const panB = document.getElementById('fc-panel-b');
+            const ON  = 'flex:1;text-align:center;padding:10px 14px;cursor:pointer;background:var(--accent-color);color:#fff;font-size:13px;font-weight:600;';
+            const OFF = 'flex:1;text-align:center;padding:10px 14px;cursor:pointer;background:#3c3c3c;color:#858585;font-size:13px;font-weight:600;';
+            function setTab(m) {
+                if (m === 'A') { tabA.style.cssText = ON;  tabB.style.cssText = OFF; panA.style.display = ''; panB.style.display = 'none'; }
+                else           { tabB.style.cssText = ON;  tabA.style.cssText = OFF; panB.style.display = ''; panA.style.display = 'none'; }
+            }
+            tabA.addEventListener('click', () => setTab('A'));
+            tabB.addEventListener('click', () => setTab('B'));
+
+            // Selects & swatches (0-indexed: sel[0]=Ring1 … sel[4]=Ring5)
+            const sels = [1,2,3,4,5].map(i => document.getElementById(`fc-sel-${i}`));
+            const sws  = [1,2,3,4,5].map(i => document.getElementById(`fc-sw-${i}`));
+
+            function mkOpt(name, extra) {
+                const o = document.createElement('option');
+                o.value = name;
+                o.textContent = extra !== undefined ? `${name} — ${extra}` : name;
+                return o;
+            }
+            function fmtMult(m) {
+                if (m >= 1e9) return `×${m/1e9} GΩ`;
+                if (m >= 1e6) return `×${m/1e6} MΩ`;
+                if (m >= 1e3) return `×${m/1e3} kΩ`;
+                return `×${m}`;
+            }
+
+            // Ring 1-3: digits only
+            [0,1,2].forEach(i => {
+                sels[i].innerHTML = '';
+                digits.forEach(c => sels[i].appendChild(mkOpt(c.name, c.digit)));
+            });
+            // Ring 4: all 12 colors as multiplier
+            sels[3].innerHTML = '';
+            FC.forEach(c => sels[3].appendChild(mkOpt(c.name, fmtMult(c.mult))));
+            // Ring 5: tol colors + "keine"
+            sels[4].innerHTML = '<option value="">— keine —</option>';
+            tols.forEach(c => sels[4].appendChild(mkOpt(c.name, c.tol)));
+
+            const findC = name => FC.find(c => c.name === name) || null;
+
+            function swBorder(c) { return c.name === 'Schwarz' ? '#666' : c.name === 'Weiß' ? '#bbb' : c.hex; }
+            function updateSwatch(i) {
+                const c = findC(sels[i].value);
+                sws[i].style.background = c ? c.hex : '#2a2a2a';
+                sws[i].style.border     = '1px solid ' + (c ? swBorder(c) : '#555');
+            }
+
+            function fmtR(v) {
+                if (!isFinite(v) || v <= 0) return '?';
+                if (v >= 1e9) return parseFloat((v/1e9).toPrecision(4)) + ' GΩ';
+                if (v >= 1e6) return parseFloat((v/1e6).toPrecision(4)) + ' MΩ';
+                if (v >= 1e3) return parseFloat((v/1e3).toPrecision(4)) + ' kΩ';
+                return parseFloat(v.toPrecision(4)) + ' Ω';
+            }
+
+            function calcA() {
+                sels.forEach((_, i) => updateSwatch(i));
+                const resEl = document.getElementById('fc-result-a');
+                const c1 = findC(sels[0].value), c2 = findC(sels[1].value);
+                const c3 = findC(sels[2].value), c4 = findC(sels[3].value);
+                if (!c1 || !c2 || !c3 || !c4) { resEl.innerHTML = '—'; return; }
+                const R = (c1.digit * 100 + c2.digit * 10 + c3.digit) * c4.mult;
+                let html = `R = <strong style="color:#60a5fa;font-size:20px;">${fmtR(R)}</strong>`;
+                const tolVal = sels[4].value;
+                if (tolVal) {
+                    const c5 = findC(tolVal);
+                    html += ` <span style="color:#fbbf24;">${c5.tol}</span>`;
+                    const pct = parseFloat(c5.tol.replace('±','').replace('%','')) / 100;
+                    html += `<span style="font-size:12px;color:var(--text-muted);margin-top:4px;display:block;">Toleranzbereich: [${fmtR(R*(1-pct))} … ${fmtR(R*(1+pct))}]</span>`;
+                }
+                resEl.innerHTML = html;
+            }
+
+            sels.forEach((s, i) => s.addEventListener('change', () => { updateSwatch(i); calcA(); }));
+            document.getElementById('fc-clear-a').addEventListener('click', () => {
+                sels[0].value = 'Braun'; sels[1].value = 'Schwarz'; sels[2].value = 'Schwarz';
+                sels[3].value = 'Braun'; sels[4].value = 'Gold';
+                sels.forEach((_, i) => updateSwatch(i)); calcA();
+            });
+
+            // Default: Braun, Schwarz, Schwarz, Braun, Gold = 1 kΩ ±5%
+            sels[0].value = 'Braun'; sels[1].value = 'Schwarz'; sels[2].value = 'Schwarz';
+            sels[3].value = 'Braun'; sels[4].value = 'Gold';
+            sels.forEach((_, i) => updateSwatch(i));
+            calcA();
+
+            // === MODE B ===
+            const bInp   = document.getElementById('fc-b-inp');
+            const bCalc  = document.getElementById('fc-calc-b');
+            const bClear = document.getElementById('fc-clear-b');
+            const errB   = document.getElementById('fc-error-b');
+            const ringsEl = document.getElementById('fc-rings-b');
+            const resB    = document.getElementById('fc-result-b');
+
+            function nameCol(c) { return c.name === 'Schwarz' ? '#aaaaaa' : c.name === 'Weiß' ? '#dddddd' : c.hex; }
+
+            function calcB() {
+                errB.style.display = 'none';
+                const raw = bInp.value.trim().replace(/\s*[ΩohmsOhms]+$/i, '').trim();
+                if (!raw) { ringsEl.innerHTML = ''; resB.innerHTML = ''; return; }
+                const R = bkParseVal(raw);
+                if (R === null || R <= 0 || !isFinite(R)) {
+                    errB.innerHTML = 'Ungültiger Widerstandswert.'; errB.style.display = 'block';
+                    ringsEl.innerHTML = ''; resB.innerHTML = ''; return;
+                }
+                if (R < 1) {
+                    errB.innerHTML = 'Wert zu klein — 5-Band-Code gilt ab 1 Ω.'; errB.style.display = 'block';
+                    ringsEl.innerHTML = ''; resB.innerHTML = ''; return;
+                }
+                const exp  = Math.floor(Math.log10(R)) - 2;
+                const pow  = Math.pow(10, exp);
+                let mant   = Math.round(R / pow);
+                if (mant > 999) mant = 999;
+                if (mant < 100) mant = 100;
+                const d1 = Math.floor(mant / 100);
+                const d2 = Math.floor((mant % 100) / 10);
+                const d3 = mant % 10;
+                const c1 = FC.find(c => c.digit === d1);
+                const c2 = FC.find(c => c.digit === d2);
+                const c3 = FC.find(c => c.digit === d3);
+                const cm = FC.reduce((best, c) =>
+                    Math.abs(Math.log10(c.mult) - exp) < Math.abs(Math.log10(best.mult) - exp) ? c : best
+                );
+                const bands = [{ c: c1, lbl: 'Ring 1' }, { c: c2, lbl: 'Ring 2' },
+                               { c: c3, lbl: 'Ring 3' }, { c: cm, lbl: 'Mult' }];
+                ringsEl.innerHTML = bands.map(({ c, lbl }) => `
+                    <div style="display:flex;flex-direction:column;align-items:center;gap:6px;">
+                        <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.04em;">${lbl}</div>
+                        <div style="width:34px;height:64px;background:${c.hex};border-radius:6px;
+                             border:2px solid ${swBorder(c)};box-shadow:0 2px 8px rgba(0,0,0,0.5);"></div>
+                        <div style="font-size:11px;font-family:var(--mono-font);color:${nameCol(c)};">${c.name}</div>
+                    </div>`).join('');
+                const Rout = (d1*100 + d2*10 + d3) * cm.mult;
+                resB.innerHTML = `R ≈ <strong>${fmtR(Rout)}</strong>`;
+            }
+
+            bInp.addEventListener('input', calcB);
+            bCalc.addEventListener('click', calcB);
+            bClear.addEventListener('click', () => {
+                bInp.value = ''; bInp.style.color = 'var(--text-normal)';
+                ringsEl.innerHTML = ''; resB.innerHTML = ''; errB.style.display = 'none';
+            });
+        }
+
+        // ===== BATTERIE / INNENWIDERSTAND =====
+        function initBatterieCalculator() {
+            const fields = ['e','ri','isc','ra','uk','i','pa','pi','pges'];
+            const inputs = {};
+            fields.forEach(k => inputs[k] = document.getElementById(`bat-${k}`));
+            const btnCalc  = document.getElementById('bat-calc-btn');
+            const btnClear = document.getElementById('bat-clear-btn');
+            const errBox   = document.getElementById('bat-error-box');
+
+            Object.values(inputs).forEach(inp => {
+                inp.addEventListener('input', () => { inp.style.color = 'var(--text-normal)'; inp.style.fontWeight = 'normal'; errBox.style.display = 'none'; });
+                inp.addEventListener('keydown', e => { if (e.key === 'Enter') calc(); });
+            });
+            btnClear.addEventListener('click', () => {
+                Object.values(inputs).forEach(inp => { inp.value = ''; inp.style.color = 'var(--text-normal)'; inp.style.fontWeight = 'normal'; });
+                errBox.style.display = 'none';
+            });
+            btnCalc.addEventListener('click', calc);
+
+            function calc() {
+                errBox.style.display = 'none';
+                const v = {};
+                fields.forEach(k => { const s = inputs[k].value.trim(); v[k] = s !== '' ? parseFloat(s.replace(',','.')) : null; });
+                const orig = { ...v };
+
+                for (const k of fields) { if (v[k] !== null && v[k] < 0) { showErr(`${k.toUpperCase()} darf nicht negativ sein.`); return; } }
+                if (v.ri !== null && v.ri <= 0) { showErr('Ri muss > 0 sein.'); return; }
+                if (Object.values(orig).filter(x => x !== null).length < 2) { showErr('Bitte mindestens 2 Werte eingeben.'); return; }
+
+                for (let iter = 0; iter < 20; iter++) {
+                    const snap = JSON.stringify(v);
+
+                    // Isc = E / Ri
+                    if (v.e  !== null && v.ri  !== null && v.ri  > 0 && v.isc === null) v.isc = v.e / v.ri;
+                    if (v.isc!== null && v.ri  !== null && v.ri  > 0 && v.e   === null) v.e   = v.isc * v.ri;
+                    if (v.e  !== null && v.isc !== null && v.isc > 0 && v.ri  === null) v.ri  = v.e / v.isc;
+
+                    // Uk = I · Ra
+                    if (v.i  !== null && v.ra  !== null && v.uk  === null) v.uk = v.i * v.ra;
+                    if (v.uk !== null && v.ra  !== null && v.ra  > 0 && v.i   === null) v.i   = v.uk / v.ra;
+                    if (v.uk !== null && v.i   !== null && v.i   > 0 && v.ra  === null) v.ra  = v.uk / v.i;
+
+                    // E = Uk + I·Ri
+                    if (v.uk !== null && v.i   !== null && v.ri  !== null && v.e   === null) v.e  = v.uk + v.i * v.ri;
+                    if (v.e  !== null && v.i   !== null && v.ri  !== null && v.uk  === null) v.uk = v.e - v.i * v.ri;
+                    if (v.e  !== null && v.uk  !== null && v.i   !== null && v.i   > 0 && v.ri  === null) v.ri = (v.e - v.uk) / v.i;
+                    if (v.e  !== null && v.uk  !== null && v.ri  !== null && v.ri  > 0 && v.i   === null) v.i  = (v.e - v.uk) / v.ri;
+
+                    // I = E / (Ri + Ra)
+                    if (v.e !== null && v.ri !== null && v.ra !== null && v.i === null && (v.ri + v.ra) > 0)
+                        v.i = v.e / (v.ri + v.ra);
+                    if (v.i !== null && v.i > 0 && v.e !== null && v.ra !== null && v.ri === null) {
+                        const r = v.e / v.i - v.ra; if (r > 0) v.ri = r;
+                    }
+                    if (v.i !== null && v.i > 0 && v.e !== null && v.ri !== null && v.ra === null) {
+                        const r = v.e / v.i - v.ri; if (r >= 0) v.ra = r;
+                    }
+
+                    // Pa = I²·Ra
+                    if (v.i  !== null && v.ra !== null && v.pa  === null) v.pa = v.i ** 2 * v.ra;
+                    if (v.pa !== null && v.ra !== null && v.ra  > 0 && v.i  === null) v.i  = Math.sqrt(v.pa / v.ra);
+                    if (v.pa !== null && v.i  !== null && v.i   > 0 && v.ra === null) v.ra = v.pa / v.i ** 2;
+
+                    // Pa = Uk·I
+                    if (v.uk !== null && v.i  !== null && v.pa  === null) v.pa = v.uk * v.i;
+                    if (v.pa !== null && v.i  !== null && v.i   > 0 && v.uk === null) v.uk = v.pa / v.i;
+                    if (v.pa !== null && v.uk !== null && v.uk  > 0 && v.i  === null) v.i  = v.pa / v.uk;
+
+                    // Pa = Uk²/Ra
+                    if (v.uk !== null && v.ra !== null && v.ra  > 0 && v.pa === null) v.pa = v.uk ** 2 / v.ra;
+                    if (v.pa !== null && v.ra !== null && v.ra  > 0 && v.uk === null) v.uk = Math.sqrt(v.pa * v.ra);
+                    if (v.pa !== null && v.uk !== null && v.pa  > 0 && v.ra === null) v.ra = v.uk ** 2 / v.pa;
+
+                    // Pi = I²·Ri
+                    if (v.i  !== null && v.ri !== null && v.pi  === null) v.pi = v.i ** 2 * v.ri;
+                    if (v.pi !== null && v.ri !== null && v.ri  > 0 && v.i  === null) v.i  = Math.sqrt(v.pi / v.ri);
+                    if (v.pi !== null && v.i  !== null && v.i   > 0 && v.ri === null) v.ri = v.pi / v.i ** 2;
+
+                    // Pi = (E−Uk)·I
+                    if (v.e  !== null && v.uk !== null && v.i   !== null && v.pi  === null) v.pi = (v.e - v.uk) * v.i;
+                    if (v.pi !== null && v.i  !== null && v.i   > 0 && v.uk !== null && v.e  === null) v.e  = v.pi / v.i + v.uk;
+                    if (v.pi !== null && v.i  !== null && v.i   > 0 && v.e  !== null && v.uk === null) v.uk = v.e - v.pi / v.i;
+
+                    // P_ges = E·I
+                    if (v.e    !== null && v.i    !== null && v.pges === null)          v.pges = v.e * v.i;
+                    if (v.pges !== null && v.i    !== null && v.i   > 0 && v.e    === null) v.e    = v.pges / v.i;
+                    if (v.pges !== null && v.e    !== null && v.e   > 0 && v.i    === null) v.i    = v.pges / v.e;
+
+                    // P_ges = Pa + Pi
+                    if (v.pa   !== null && v.pi   !== null && v.pges === null)          v.pges = v.pa + v.pi;
+                    if (v.pges !== null && v.pa   !== null && v.pi  === null)           v.pi   = v.pges - v.pa;
+                    if (v.pges !== null && v.pi   !== null && v.pa  === null)           v.pa   = v.pges - v.pi;
+
+                    if (JSON.stringify(v) === snap) break;
+                }
+
+                const fmt = x => x === null || !isFinite(x) ? '' : parseFloat(x.toPrecision(5)).toString();
+                fields.forEach(k => {
+                    if (v[k] !== null && isFinite(v[k])) {
+                        inputs[k].value = fmt(v[k]);
+                        if (orig[k] === null) { inputs[k].style.color = '#60a5fa'; inputs[k].style.fontWeight = 'bold'; }
+                    }
+                });
+            }
+            function showErr(msg) { errBox.innerHTML = msg; errBox.style.display = 'block'; }
         }
 
         // Start
