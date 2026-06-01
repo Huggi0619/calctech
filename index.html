@@ -487,6 +487,86 @@
                 padding: 20px;
             }
         }
+
+        /* ===== BAUKASTEN CIRCUIT BUILDER ===== */
+        #pane-schaltungsbauer { max-width: none; padding: 0; }
+        .bk-top-bar {
+            display: flex; align-items: center; gap: 10px;
+            padding: 10px 18px; background: #252526;
+            border-bottom: 1px solid var(--border-color);
+            flex-wrap: wrap; font-size: 13px;
+        }
+        .bk-lbl { color: var(--text-muted); font-weight: 600; font-size: 12px; }
+        .bk-num-inp {
+            background: #3c3c3c; border: 1px solid #555;
+            color: var(--text-normal); padding: 5px 8px;
+            border-radius: 6px; font-family: var(--mono-font);
+            font-size: 13px; outline: none;
+        }
+        .bk-num-inp:focus { border-color: var(--accent-color); }
+        .bk-canvas-wrap {
+            background: #1a1a1a; height: 400px;
+            border-bottom: 1px solid var(--border-color); overflow: hidden;
+        }
+        #bk-canvas { display: block; width: 100%; height: 100%; cursor: pointer; }
+        .bk-formula-bar {
+            padding: 7px 18px; background: #252526;
+            border-bottom: 1px solid var(--border-color); font-size: 13px; min-height: 33px;
+        }
+        .bk-action-bar {
+            display: flex; gap: 8px; padding: 10px 14px;
+            background: #1e1e1e; border-bottom: 1px solid var(--border-color); flex-wrap: wrap;
+        }
+        .bk-btn {
+            padding: 7px 16px; border: none; border-radius: 8px;
+            font-size: 13px; font-weight: 600; cursor: pointer; color: #fff;
+            transition: filter .15s, transform .1s;
+            letter-spacing: 0.02em;
+        }
+        .bk-btn:hover  { filter: brightness(1.2); }
+        .bk-btn:active { transform: scale(0.96); filter: brightness(0.92); }
+        .bk-btn-blue   { background: #1d4ed8; }
+        .bk-btn-brown  { background: #92400e; }
+        .bk-btn-orange { background: #c2410c; }
+        .bk-btn-purple { background: #6d28d9; }
+        .bk-btn-slate  { background: #475569; }
+        .bk-btn-dark   { background: #334155; }
+        .bk-btn-green  { background: #059669; font-size: 14px; padding: 8px 22px; }
+        .bk-btn-red    { background: #dc2626; }
+        .bk-table-wrap {
+            max-height: 210px; overflow-y: auto;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .bk-table-wrap::-webkit-scrollbar { width: 8px; }
+        .bk-table-wrap::-webkit-scrollbar-thumb { background: #424242; }
+        .bk-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        .bk-table thead th {
+            background: #1e293b; color: #fff; padding: 6px 8px;
+            text-align: left; font-weight: 600; position: sticky; top: 0; z-index: 1;
+            font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em;
+        }
+        .bk-table th:not(:first-child), .bk-table td:not(:first-child) { min-width: 90px; }
+        .bk-table td { border-bottom: 1px solid #222; }
+        .bk-inp {
+            width: 100%; background: transparent; border: none;
+            border-bottom: 1px solid #333;
+            color: var(--text-normal); padding: 5px 6px;
+            font-family: var(--mono-font); font-size: 12px; outline: none;
+            box-sizing: border-box; transition: border-color .15s;
+        }
+        .bk-inp:hover  { border-bottom-color: #555; }
+        .bk-inp:focus  { border-bottom-color: var(--accent-color); background: rgba(0,122,204,.06); }
+        /* Focused row — sky-blue left accent + tinted bg */
+        .bk-table tbody tr.bk-row-focused td { background: #0d2a45 !important; }
+        .bk-table tbody tr.bk-row-focused td:first-child {
+            border-left: 3px solid #38bdf8;
+            color: #38bdf8 !important; font-weight: 700 !important;
+        }
+        .bk-table tbody tr.bk-row-focused .bk-inp { background: rgba(56,189,248,.06); }
+        .bk-bottom-bar {
+            display: flex; align-items: center; gap: 12px;
+            padding: 10px 18px; background: #252526; flex-wrap: wrap;
+        }
     </style>
 </head>
 <body>
@@ -568,7 +648,8 @@
                 items: [
                     { id: 'ohmsches-gesetz', name: 'Ohmsches Gesetz', icon: 'Ω', desc: 'Berechnung von Spannung (U), Strom (I), Widerstand (R) und Leistung (P).' },
                     { id: 'leistung', name: 'Leistung', icon: 'W', desc: 'Berechnung der elektrischen Leistung (P).' },
-                    { id: 'widerstand', name: 'Widerstand', icon: 'R', desc: 'Reihen- und Parallelschaltung, Farbcode, Innenwiderstand.' }
+                    { id: 'widerstand', name: 'Widerstand', icon: 'R', desc: 'Reihen- und Parallelschaltung, Farbcode, Innenwiderstand.' },
+                    { id: 'schaltungsbauer', name: 'Schaltungsbauer', icon: '⊟', desc: 'Widerstände visuell kombinieren — Reihe und Parallel — und U/I/R/P bidirektional berechnen.' }
                 ]
             },
             {
@@ -795,6 +876,53 @@
                 `;
                 editorContentEl.appendChild(paneEl);
                 initOhmCalculator();
+            } else if (item.id === 'schaltungsbauer') {
+                paneEl.style.maxWidth = 'none';
+                paneEl.style.padding = '0';
+                paneEl.innerHTML = `
+                    <div class="calc-card" style="padding:0;overflow:hidden;">
+                        <div style="padding:18px 26px 14px;border-bottom:1px solid var(--border-color);">
+                            <h2><span style="color:var(--accent-color);font-family:var(--mono-font);">${item.icon}</span> ${item.name}</h2>
+                            <p style="margin:4px 0 0;">${item.desc}</p>
+                        </div>
+                        <div class="bk-top-bar">
+                            <span class="bk-lbl">Anzahl:</span>
+                            <input type="number" id="bk-count" value="5" min="1" max="15" class="bk-num-inp" style="width:54px;">
+                            <span class="bk-lbl">R [&Omega;]:</span>
+                            <input type="number" id="bk-rval" value="100" class="bk-num-inp" style="width:80px;">
+                            <button class="bk-btn bk-btn-blue" id="bk-btn-new">&#8635; Neu erstellen</button>
+                            <button class="bk-btn bk-btn-brown" id="bk-btn-setr">R-Wert setzen</button>
+                        </div>
+                        <div class="bk-canvas-wrap"><canvas id="bk-canvas"></canvas></div>
+                        <div class="bk-formula-bar">
+                            <span class="bk-lbl">Schaltung:</span>
+                            <span id="bk-formula" style="color:var(--accent-color);font-family:var(--mono-font);font-weight:600;margin-left:8px;">—</span>
+                        </div>
+                        <div class="bk-action-bar">
+                            <button class="bk-btn bk-btn-orange" id="bk-btn-parallel">&#8741; Parallel</button>
+                            <button class="bk-btn bk-btn-purple" id="bk-btn-series">+ In Reihe</button>
+                            <button class="bk-btn bk-btn-slate"  id="bk-btn-dissolve">Aufl&ouml;sen</button>
+                            <button class="bk-btn bk-btn-dark"   id="bk-btn-selall">Alle w&auml;hlen</button>
+                            <button class="bk-btn bk-btn-slate"  id="bk-btn-undo">&#8592; Zur&uuml;ck</button>
+                        </div>
+                        <div class="bk-table-wrap">
+                            <table class="bk-table">
+                                <thead><tr>
+                                    <th style="width:80px;">Bauteil</th>
+                                    <th>U [V]</th><th>I [A]</th><th>R [&Omega;]</th><th>P [W]</th>
+                                </tr></thead>
+                                <tbody id="bk-table-body"></tbody>
+                            </table>
+                        </div>
+                        <div class="bk-bottom-bar">
+                            <button class="bk-btn bk-btn-green" id="bk-btn-calc">BERECHNEN</button>
+                            <button class="bk-btn bk-btn-red"   id="bk-btn-clear-tbl">Tabelle leeren</button>
+                            <span id="bk-result" style="font-family:var(--mono-font);font-weight:600;color:#4ade80;font-size:14px;">Ersatzwiderstand: —</span>
+                        </div>
+                    </div>
+                `;
+                editorContentEl.appendChild(paneEl);
+                initBaukastenCalculator();
             } else {
                 paneEl.innerHTML = `
                     <div class="calc-card">
@@ -979,6 +1107,610 @@
                     el.classList.remove('active');
                 }
             });
+        }
+
+        // ========== BAUKASTEN CIRCUIT BUILDER ==========
+
+        const BK_RW = 82, BK_RH = 48, BK_PAD = 14, BK_WIRE = 20, BK_RAIL = 14;
+        const BK_MAX_ITER = 100;
+
+        let _bkIdCtr = 0;
+        let bkNodes = [], bkLeafNodes = [], bkSelected = new Set();
+        let bkHistory = [];
+        let bkTableRows = new Map();   // CircuitNode -> {U,I,R,P: HTMLInputElement}
+        let bkGesamtEntries = {};
+        let bkInputsSnap = new Map();  // CircuitNode -> {U,I,R,P: value|null}
+        let bkHitRects = [];           // [{x1,y1,x2,y2,topNode,leafNode}]
+        let bkFocusedLeaf = null;      // leaf CircuitNode whose table row is highlighted
+        let bkNodeRowMap = new Map();  // CircuitNode -> HTMLTableRowElement
+
+        class CircuitNode {
+            constructor(type, label = '', rVal = null) {
+                this.__id = _bkIdCtr++;
+                this.type = type;
+                this.label = label;
+                this.rVal = rVal;
+                this.children = [];
+                this.vals = { U: null, I: null, R: null, P: null };
+            }
+            formula() {
+                if (this.type === 'R') return this.label;
+                const op = this.type === 'series' ? ' + ' : ' ∥ ';
+                const inner = this.children.map(c => c.formula()).join(op);
+                return this.children.length > 1 ? `(${inner})` : inner;
+            }
+        }
+
+        // --- Measure ---
+        function bkMeasure(node) {
+            if (node.type === 'R') return [BK_RW, BK_RH];
+            const cs = node.children.map(c => bkMeasure(c));
+            if (node.type === 'series') {
+                const w = cs.reduce((s, [cw]) => s + cw, 0) + BK_WIRE * (cs.length - 1) + 2 * BK_PAD;
+                const h = Math.max(...cs.map(([, ch]) => ch)) + 2 * BK_PAD;
+                return [w, h];
+            } else {
+                const w = Math.max(...cs.map(([cw]) => cw)) + 2 * BK_RAIL + 2 * BK_PAD;
+                const h = cs.reduce((s, [, ch]) => s + ch, 0) + BK_WIRE * (cs.length - 1) + 2 * BK_PAD;
+                return [w, h];
+            }
+        }
+
+        // --- Draw ---
+        const BK_DEPTH_BG = ['#1e1e1e', '#202428', '#1e2020', '#201e22', '#1e2022'];
+        function bkDrawNode(ctx, node, left, midY, sel, hits, depth, topNode) {
+            const [w, h] = bkMeasure(node);
+            const top = midY - Math.floor(h / 2);
+            const isSelected = sel.has(topNode);
+
+            if (node.type === 'R') {
+                const isFocused = node === bkFocusedLeaf;
+                // Fill
+                if (isSelected) ctx.fillStyle = '#0c2a4a';
+                else if (isFocused) ctx.fillStyle = '#071e36';
+                else ctx.fillStyle = '#252526';
+                ctx.fillRect(left, top, w, h);
+                // Border — focused beats selected in color (cyan > blue)
+                if (isFocused) {
+                    ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 2.5;
+                } else if (isSelected) {
+                    ctx.strokeStyle = '#007acc'; ctx.lineWidth = 3;
+                } else {
+                    ctx.strokeStyle = '#555'; ctx.lineWidth = 1;
+                }
+                ctx.setLineDash([]);
+                ctx.strokeRect(left, top, w, h);
+                // Small accent dot bottom-left when focused
+                if (isFocused) {
+                    ctx.fillStyle = '#38bdf8';
+                    ctx.beginPath(); ctx.arc(left + 7, top + h - 7, 3, 0, Math.PI * 2); ctx.fill();
+                }
+                // Label
+                ctx.fillStyle = isFocused ? '#bae6fd' : '#e2e8f0';
+                ctx.font = 'bold 11px Inter, system-ui, sans-serif';
+                ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                ctx.fillText(node.label, left + w / 2, midY - 9);
+                // R value
+                const rv = node.rVal !== null ? `${parseFloat(node.rVal.toPrecision(4))} Ω` : '? Ω';
+                ctx.fillStyle = isFocused ? '#7dd3fc' : '#858585';
+                ctx.font = '10px Inter, system-ui, sans-serif';
+                ctx.fillText(rv, left + w / 2, midY + 9);
+                hits.push({ x1: left, y1: top, x2: left + w, y2: top + h, topNode, leafNode: node });
+                return;
+            }
+
+            ctx.fillStyle = BK_DEPTH_BG[depth % BK_DEPTH_BG.length];
+            ctx.fillRect(left, top, w, h);
+            ctx.strokeStyle = isSelected ? '#007acc' : '#3c3c3c';
+            ctx.lineWidth = isSelected ? 2 : 1;
+            ctx.setLineDash(isSelected ? [] : [5, 3]);
+            ctx.strokeRect(left, top, w, h);
+            ctx.setLineDash([]);
+
+            if (node.type === 'series') {
+                let cx = left + BK_PAD;
+                for (let i = 0; i < node.children.length; i++) {
+                    const [cw] = bkMeasure(node.children[i]);
+                    if (i > 0) {
+                        ctx.beginPath(); ctx.strokeStyle = '#64748b'; ctx.lineWidth = 2;
+                        ctx.moveTo(cx, midY); ctx.lineTo(cx + BK_WIRE, midY); ctx.stroke();
+                        cx += BK_WIRE;
+                    }
+                    bkDrawNode(ctx, node.children[i], cx, midY, sel, hits, depth + 1, topNode);
+                    cx += cw;
+                }
+            } else {
+                const innerW = Math.max(...node.children.map(c => bkMeasure(c)[0]));
+                const railL = left + BK_PAD, railR = left + w - BK_PAD;
+                const mids = [];
+                let curY = top + BK_PAD;
+                for (const ch of node.children) {
+                    const [, ch_h] = bkMeasure(ch);
+                    mids.push(curY + Math.floor(ch_h / 2));
+                    curY += ch_h + BK_WIRE;
+                }
+                ctx.beginPath(); ctx.strokeStyle = '#64748b'; ctx.lineWidth = 2;
+                ctx.moveTo(railL, mids[0]); ctx.lineTo(railL, mids[mids.length - 1]); ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(railR, mids[0]); ctx.lineTo(railR, mids[mids.length - 1]); ctx.stroke();
+                for (let i = 0; i < node.children.length; i++) {
+                    const [cw] = bkMeasure(node.children[i]);
+                    const cl = left + BK_PAD + BK_RAIL + Math.floor((innerW - cw) / 2);
+                    bkDrawNode(ctx, node.children[i], cl, mids[i], sel, hits, depth + 1, topNode);
+                    ctx.beginPath(); ctx.strokeStyle = '#64748b'; ctx.lineWidth = 2;
+                    ctx.moveTo(railL, mids[i]); ctx.lineTo(cl, mids[i]); ctx.stroke();
+                    ctx.beginPath();
+                    ctx.moveTo(cl + cw, mids[i]); ctx.lineTo(railR, mids[i]); ctx.stroke();
+                }
+            }
+        }
+
+        // --- Solver ---
+        function bkApplyOhm(v) {
+            if (v.R !== null && v.I !== null && v.U === null) v.U = v.R * v.I;
+            if (v.U !== null && v.R !== null && v.I === null && v.R !== 0) v.I = v.U / v.R;
+            if (v.U !== null && v.I !== null && v.R === null && v.I !== 0) v.R = v.U / v.I;
+            if (v.U !== null && v.I !== null && v.P === null) v.P = v.U * v.I;
+            if (v.U !== null && v.R !== null && v.P === null && v.R !== 0) v.P = v.U ** 2 / v.R;
+            if (v.I !== null && v.R !== null && v.P === null) v.P = v.I ** 2 * v.R;
+            if (v.P !== null && v.U !== null && v.I === null && v.U !== 0) v.I = v.P / v.U;
+            if (v.P !== null && v.I !== null && v.U === null && v.I !== 0) v.U = v.P / v.I;
+            if (v.P !== null && v.I !== null && v.R === null && v.I !== 0) v.R = v.P / v.I ** 2;
+            if (v.U !== null && v.P !== null && v.R === null && v.P !== 0) v.R = v.U ** 2 / v.P;
+            if (v.P !== null && v.R !== null && v.P >= 0 && v.R > 0) {
+                if (v.I === null) v.I = Math.sqrt(v.P / v.R);
+                if (v.U === null) v.U = Math.sqrt(v.P * v.R);
+            }
+        }
+
+        function bkOhmAll(node) {
+            bkApplyOhm(node.vals);
+            for (const c of node.children) bkOhmAll(c);
+        }
+
+        function _bkSumKn(arr) { return arr.filter(x => x !== null).reduce((a, b) => a + b, 0); }
+        function _bkCntNull(arr) { return arr.filter(x => x === null).length; }
+        function _bkIdxNull(arr) { return arr.indexOf(null); }
+
+        function bkUp(node) {
+            if (node.type === 'R') return;
+            for (const c of node.children) bkUp(c);
+            const v = node.vals;
+            const cv = node.children.map(c => c.vals);
+            if (node.type === 'series') {
+                const rL = cv.map(x => x.R);
+                if (v.R === null && _bkCntNull(rL) === 0) v.R = _bkSumKn(rL);
+                else if (v.R !== null && _bkCntNull(rL) === 1) cv[_bkIdxNull(rL)].R = Math.max(0, v.R - _bkSumKn(rL));
+                const uL = cv.map(x => x.U);
+                if (v.U === null && _bkCntNull(uL) === 0) v.U = _bkSumKn(uL);
+                else if (v.U !== null && _bkCntNull(uL) === 1) cv[_bkIdxNull(uL)].U = Math.max(0, v.U - _bkSumKn(uL));
+                const iV = cv.map(x => x.I).filter(i => i !== null);
+                if (v.I === null && iV.length > 0) v.I = iV[0];
+                const pL = cv.map(x => x.P);
+                if (v.P === null && _bkCntNull(pL) === 0) v.P = _bkSumKn(pL);
+                else if (v.P !== null && _bkCntNull(pL) === 1) cv[_bkIdxNull(pL)].P = Math.max(0, v.P - _bkSumKn(pL));
+            } else {
+                const rL = cv.map(x => x.R);
+                if (v.R === null && _bkCntNull(rL) === 0 && rL.every(r => r > 0))
+                    v.R = 1 / rL.reduce((s, r) => s + 1 / r, 0);
+                else if (v.R !== null && v.R > 0 && _bkCntNull(rL) === 1) {
+                    const mi = _bkIdxNull(rL);
+                    const kInv = rL.filter(r => r !== null && r > 0).reduce((s, r) => s + 1 / r, 0);
+                    const diff = 1 / v.R - kInv;
+                    if (diff > Math.abs(1 / v.R) * 1e-9 + 1e-15) cv[mi].R = 1 / diff;
+                }
+                const uV = cv.map(x => x.U).filter(u => u !== null);
+                if (v.U === null && uV.length > 0) v.U = uV[0];
+                const iL = cv.map(x => x.I);
+                if (v.I === null && _bkCntNull(iL) === 0) v.I = _bkSumKn(iL);
+                else if (v.I !== null && _bkCntNull(iL) === 1) cv[_bkIdxNull(iL)].I = Math.max(0, v.I - _bkSumKn(iL));
+                const pL = cv.map(x => x.P);
+                if (v.P === null && _bkCntNull(pL) === 0) v.P = _bkSumKn(pL);
+                else if (v.P !== null && _bkCntNull(pL) === 1) cv[_bkIdxNull(pL)].P = Math.max(0, v.P - _bkSumKn(pL));
+            }
+        }
+
+        function bkDown(node) {
+            if (node.type === 'R') return;
+            const v = node.vals;
+            const cv = node.children.map(c => c.vals);
+            if (node.type === 'series') {
+                if (v.I !== null) for (const c of node.children) { if (c.vals.I === null) c.vals.I = v.I; }
+                const uL = cv.map(x => x.U);
+                if (v.U !== null && _bkCntNull(uL) === 1) cv[_bkIdxNull(uL)].U = Math.max(0, v.U - _bkSumKn(uL));
+                const rL = cv.map(x => x.R);
+                if (v.R !== null && _bkCntNull(rL) === 1) cv[_bkIdxNull(rL)].R = Math.max(0, v.R - _bkSumKn(rL));
+                const pL = cv.map(x => x.P);
+                if (v.P !== null && _bkCntNull(pL) === 1) cv[_bkIdxNull(pL)].P = Math.max(0, v.P - _bkSumKn(pL));
+            } else {
+                if (v.U !== null) for (const c of node.children) { if (c.vals.U === null) c.vals.U = v.U; }
+                const iL = cv.map(x => x.I);
+                if (v.I !== null && _bkCntNull(iL) === 1) cv[_bkIdxNull(iL)].I = Math.max(0, v.I - _bkSumKn(iL));
+                const rL = cv.map(x => x.R);
+                if (v.R !== null && v.R > 0 && _bkCntNull(rL) === 1) {
+                    const mi = _bkIdxNull(rL);
+                    const kInv = rL.filter(r => r !== null && r > 0).reduce((s, r) => s + 1 / r, 0);
+                    const diff = 1 / v.R - kInv;
+                    if (diff > Math.abs(1 / v.R) * 1e-9 + 1e-15) cv[mi].R = 1 / diff;
+                }
+                const pL = cv.map(x => x.P);
+                if (v.P === null && _bkCntNull(pL) === 0) v.P = _bkSumKn(pL);
+                else if (v.P !== null && _bkCntNull(pL) === 1) cv[_bkIdxNull(pL)].P = Math.max(0, v.P - _bkSumKn(pL));
+            }
+            for (const c of node.children) bkDown(c);
+        }
+
+        function bkSnapVals(node) {
+            const p = [`${node.__id}:${JSON.stringify(node.vals)}`];
+            for (const c of node.children) p.push(bkSnapVals(c));
+            return p.join('|');
+        }
+
+        function solveBaukasten(root) {
+            for (let i = 0; i < BK_MAX_ITER; i++) {
+                const prev = bkSnapVals(root);
+                bkOhmAll(root); bkUp(root); bkOhmAll(root); bkDown(root); bkOhmAll(root);
+                if (bkSnapVals(root) === prev) break;
+            }
+        }
+
+        // --- Node serialization for undo ---
+        function bkSerNode(n) {
+            return n.type === 'R' ? n : { type: n.type, ch: n.children.map(c => bkSerNode(c)) };
+        }
+        function bkDeserNode(s) {
+            if (s instanceof CircuitNode) return s;
+            const n = new CircuitNode(s.type);
+            n.children = s.ch.map(c => bkDeserNode(c));
+            return n;
+        }
+        function bkCollectLeaves(nodes) {
+            const res = [];
+            const col = n => { n.type === 'R' ? res.push(n) : n.children.forEach(col); };
+            nodes.forEach(col);
+            return res;
+        }
+
+        // --- Value parsing / formatting ---
+        function bkParseVal(str) {
+            if (!str) return null;
+            str = str.replace(',', '.').trim();
+            if (!str) return null;
+            const low = str.toLowerCase();
+            if (low.endsWith('meg')) return parseFloat(str) * 1e6;
+            if (/[Tt]$/.test(str)) return parseFloat(str) * 1e12;
+            if (/[Gg]$/.test(str)) return parseFloat(str) * 1e9;
+            if (low.endsWith('k'))  return parseFloat(str) * 1e3;
+            if (/M$/.test(str))    return parseFloat(str) * 1e6;
+            if (/m$/.test(str))    return parseFloat(str) * 1e-3;
+            if (str.endsWith('μ') || low.endsWith('u')) return parseFloat(str) * 1e-6;
+            if (low.endsWith('n')) return parseFloat(str) * 1e-9;
+            if (low.endsWith('p')) return parseFloat(str) * 1e-12;
+            const v = parseFloat(str);
+            return isNaN(v) ? null : v;
+        }
+        function bkReadEntry(el) { return el ? bkParseVal(el.value.trim()) : null; }
+        function bkFmtVal(val, sf = 4) {
+            if (val === null || !isFinite(val)) return '';
+            return parseFloat(val.toPrecision(sf)).toString();
+        }
+
+        // --- Redraw canvas ---
+        function bkRedraw() {
+            const canvas = document.getElementById('bk-canvas');
+            if (!canvas) return;
+            canvas.width  = canvas.parentElement.clientWidth  || 600;
+            canvas.height = canvas.parentElement.clientHeight || 230;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#1e1e1e';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            bkHitRects = [];
+            const formulaEl = document.getElementById('bk-formula');
+            if (!bkNodes.length) {
+                ctx.fillStyle = '#555'; ctx.font = '13px Inter, system-ui, sans-serif';
+                ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                ctx.fillText("Klicke auf '↺ Neu erstellen'", canvas.width / 2, canvas.height / 2);
+                if (formulaEl) formulaEl.textContent = '—';
+                return;
+            }
+            const W = canvas.width, H = canvas.height, GAP = 28;
+            const sizes = bkNodes.map(n => bkMeasure(n));
+            const totalW = sizes.reduce((s, [w]) => s + w, 0) + GAP * (bkNodes.length - 1);
+            let x = Math.max(20, Math.floor((W - totalW) / 2));
+            const midY = Math.floor(H / 2);
+            for (const node of bkNodes) {
+                const [w] = bkMeasure(node);
+                bkDrawNode(ctx, node, x, midY, bkSelected, bkHitRects, 0, node);
+                x += w + GAP;
+            }
+            if (formulaEl) {
+                formulaEl.textContent = bkNodes.length === 1
+                    ? bkNodes[0].formula()
+                    : bkNodes.map(n => n.formula()).join('  ,  ') + '   ← verbinden!';
+            }
+        }
+
+        // --- Build table ---
+        function bkBuildTable() {
+            const tbody = document.getElementById('bk-table-body');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+            bkTableRows = new Map();
+            bkGesamtEntries = {};
+            bkNodeRowMap = new Map();
+
+            function mkInp(bg) {
+                const inp = document.createElement('input');
+                inp.type = 'text'; inp.className = 'bk-inp';
+                inp.style.background = bg;
+                inp.addEventListener('keydown', e => { if (e.key === 'Enter') bkCalculate(); });
+                inp.addEventListener('input', () => { inp.style.color = 'var(--text-normal)'; inp.style.fontWeight = 'normal'; });
+                return inp;
+            }
+            function mkRow(label, bg, bold, node) {
+                const tr = document.createElement('tr');
+                const tdL = document.createElement('td');
+                tdL.textContent = label;
+                tdL.style.cssText = `background:${bg};padding:5px 10px;font-size:12px;font-weight:${bold?'600':'normal'};color:${bold?'var(--text-active)':'var(--text-normal)'};white-space:nowrap;`;
+                tr.appendChild(tdL);
+                const ents = {};
+                for (const k of ['U','I','R','P']) {
+                    const td = document.createElement('td');
+                    td.style.cssText = `padding:2px 3px;background:${bg};`;
+                    const inp = mkInp(bg);
+                    td.appendChild(inp); tr.appendChild(td); ents[k] = inp;
+                }
+                tbody.appendChild(tr);
+                if (node) bkNodeRowMap.set(node, tr);
+                return ents;
+            }
+
+            bkGesamtEntries = mkRow('Gesamt', '#2a2d2e', true, null);
+            for (let i = 0; i < bkLeafNodes.length; i++) {
+                const node = bkLeafNodes[i];
+                const bg = i % 2 === 0 ? '#1e1e1e' : '#252526';
+                bkTableRows.set(node, mkRow(node.label, bg, false, node));
+            }
+        }
+
+        // --- Reset ---
+        function bkReset() {
+            const cEl = document.getElementById('bk-count');
+            const rEl = document.getElementById('bk-rval');
+            let n = parseInt(cEl ? cEl.value : '5', 10);
+            if (isNaN(n) || n < 1) n = 1; if (n > 15) n = 15;
+            let r = parseFloat((rEl ? rEl.value : '100').replace(',', '.'));
+            if (isNaN(r)) r = null;
+            bkHistory = [];
+            bkFocusedLeaf = null;
+            bkLeafNodes = Array.from({length: n}, (_, i) => {
+                const nd = new CircuitNode('R', `R${i+1}`, r);
+                if (r !== null) nd.vals.R = r;
+                return nd;
+            });
+            bkNodes = [...bkLeafNodes];
+            bkSelected = new Set();
+            bkBuildTable();
+            if (r !== null) {
+                for (const nd of bkLeafNodes) {
+                    const ents = bkTableRows.get(nd);
+                    if (ents) ents.R.value = String(Number.isInteger(r) ? r : r);
+                }
+            }
+            const resEl = document.getElementById('bk-result');
+            if (resEl) resEl.textContent = 'Ersatzwiderstand: —';
+            bkRedraw();
+        }
+
+        // --- Set R value ---
+        function bkSetRval() {
+            const rEl = document.getElementById('bk-rval');
+            const r = parseFloat((rEl ? rEl.value : '').replace(',', '.'));
+            if (isNaN(r)) { alert('Ungültiger R-Wert.'); return; }
+            const targets = bkSelected.size > 0 ? bkLeafNodes.filter(n => bkSelected.has(n)) : bkLeafNodes;
+            for (const nd of targets) {
+                nd.rVal = r;
+                const ents = bkTableRows.get(nd);
+                if (ents) { ents.R.value = String(r); ents.R.style.color = 'var(--text-normal)'; }
+            }
+            bkRedraw();
+        }
+
+        // --- History ---
+        function bkPushHistory() {
+            const entState = new Map();
+            for (const [nd, ents] of bkTableRows)
+                entState.set(nd, {U:ents.U.value, I:ents.I.value, R:ents.R.value, P:ents.P.value});
+            bkHistory.push({
+                ser: bkNodes.map(n => bkSerNode(n)),
+                entState,
+                gest: {U:bkGesamtEntries.U?.value||'', I:bkGesamtEntries.I?.value||'',
+                       R:bkGesamtEntries.R?.value||'', P:bkGesamtEntries.P?.value||''}
+            });
+        }
+
+        // --- Combine ---
+        function bkCombine(mode) {
+            if (bkSelected.size < 2) { alert('Mindestens 2 Elemente auswählen.'); return; }
+            bkPushHistory();
+            const ordered = bkNodes.filter(n => bkSelected.has(n));
+            const newNode = new CircuitNode(mode);
+            for (const ch of ordered) {
+                if (ch.type === mode) newNode.children.push(...ch.children);
+                else newNode.children.push(ch);
+            }
+            const newList = []; let inserted = false;
+            for (const n of bkNodes) {
+                if (bkSelected.has(n)) { if (!inserted) { newList.push(newNode); inserted = true; } }
+                else newList.push(n);
+            }
+            bkNodes = newList; bkSelected = new Set([newNode]); bkRedraw();
+        }
+
+        // --- Dissolve ---
+        function bkDissolve() {
+            const groups = [...bkSelected].filter(n => n.type !== 'R');
+            if (!groups.length) { alert('Kein kombiniertes Element gewählt.'); return; }
+            bkPushHistory();
+            const newList = [];
+            for (const n of bkNodes) groups.includes(n) ? newList.push(...n.children) : newList.push(n);
+            bkNodes = newList; bkSelected = new Set(); bkRedraw();
+        }
+
+        // --- Select all ---
+        function bkSelectAll() { bkSelected = new Set(bkNodes); bkRedraw(); }
+
+        // --- Highlight table row matching focused leaf ---
+        function bkHighlightTableRow() {
+            document.querySelectorAll('#bk-table-body tr').forEach(tr => tr.classList.remove('bk-row-focused'));
+            if (!bkFocusedLeaf) return;
+            const rowEl = bkNodeRowMap.get(bkFocusedLeaf);
+            if (rowEl) {
+                rowEl.classList.add('bk-row-focused');
+                rowEl.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+            }
+        }
+
+        // --- Undo ---
+        function bkUndo() {
+            if (!bkHistory.length) return;
+            const { ser, entState, gest } = bkHistory.pop();
+            bkNodes = ser.map(s => bkDeserNode(s));
+            bkLeafNodes = bkCollectLeaves(bkNodes);
+            bkSelected = new Set();
+            bkBuildTable();
+            for (const [nd, vals] of entState) {
+                const ents = bkTableRows.get(nd);
+                if (ents) for (const k of ['U','I','R','P']) ents[k].value = vals[k];
+            }
+            for (const k of ['U','I','R','P']) { if (bkGesamtEntries[k]) bkGesamtEntries[k].value = gest[k]; }
+            bkRedraw();
+        }
+
+        // --- Canvas click ---
+        function bkOnClick(e) {
+            const canvas = document.getElementById('bk-canvas');
+            const rect = canvas.getBoundingClientRect();
+            const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+            const ctrl = e.ctrlKey || e.metaKey;
+            let clicked = null, clickedLeaf = null;
+            for (let i = bkHitRects.length - 1; i >= 0; i--) {
+                const hr = bkHitRects[i];
+                if (mx >= hr.x1 && mx <= hr.x2 && my >= hr.y1 && my <= hr.y2) {
+                    clicked = hr.topNode; clickedLeaf = hr.leafNode; break;
+                }
+            }
+            if (clicked === null) {
+                if (!ctrl) bkSelected = new Set();
+                bkFocusedLeaf = null;
+            } else if (ctrl) {
+                bkSelected.has(clicked) ? bkSelected.delete(clicked) : bkSelected.add(clicked);
+                // ctrl+click: don't change focused leaf, only toggle selection
+            } else {
+                bkSelected = new Set([clicked]);
+                bkFocusedLeaf = clickedLeaf; // single click → focus the leaf
+            }
+            bkHighlightTableRow();
+            bkRedraw();
+        }
+
+        // --- Calculate ---
+        function bkCalculate() {
+            if (bkNodes.length !== 1) { alert('Alle Elemente müssen verbunden sein (1 Gesamtknoten).'); return; }
+            const root = bkNodes[0];
+            const CALC_BLUE = '#60a5fa';
+
+            // Clear calculated (blue) values from UI
+            const isBlue = el => el.style.color === CALC_BLUE || el.style.color === 'rgb(96, 165, 250)';
+            for (const [, ents] of bkTableRows)
+                for (const k of ['U','I','R','P'])
+                    if (isBlue(ents[k])) { ents[k].value = ''; ents[k].style.color = 'var(--text-normal)'; ents[k].style.fontWeight = 'normal'; }
+            for (const k of ['U','I','R','P']) {
+                const e = bkGesamtEntries[k];
+                if (e && isBlue(e)) { e.value = ''; e.style.color = 'var(--text-normal)'; e.style.fontWeight = 'normal'; }
+            }
+
+            // Clear computed vals in tree
+            const clrVals = n => { n.vals = {U:null,I:null,R:null,P:null}; n.children.forEach(clrVals); };
+            clrVals(root);
+
+            // Read table inputs into tree
+            bkInputsSnap = new Map();
+            for (const nd of bkLeafNodes) {
+                const ents = bkTableRows.get(nd);
+                if (ents) for (const k of ['U','I','R','P']) nd.vals[k] = bkReadEntry(ents[k]);
+                bkInputsSnap.set(nd, { ...nd.vals });
+            }
+
+            // Read gesamt inputs
+            const gRead = {};
+            for (const k of ['U','I','R','P']) {
+                gRead[k] = bkReadEntry(bkGesamtEntries[k]);
+                if (root.vals[k] === null) root.vals[k] = gRead[k];
+            }
+
+            // Solve
+            solveBaukasten(root);
+
+            // Write results (blue = newly calculated)
+            const sf = 4;
+            for (const nd of bkLeafNodes) {
+                const ents = bkTableRows.get(nd);
+                const orig = bkInputsSnap.get(nd);
+                if (!ents || !orig) continue;
+                for (const k of ['U','I','R','P']) {
+                    const val = nd.vals[k];
+                    if (val !== null && isFinite(val) && orig[k] === null) {
+                        ents[k].value = bkFmtVal(val, sf);
+                        ents[k].style.color = CALC_BLUE;
+                        ents[k].style.fontWeight = 'bold';
+                    }
+                }
+                if (nd.vals.R !== null) nd.rVal = nd.vals.R;
+            }
+            for (const k of ['U','I','R','P']) {
+                const val = root.vals[k];
+                const e = bkGesamtEntries[k];
+                if (val !== null && isFinite(val) && gRead[k] === null && e) {
+                    e.value = bkFmtVal(val, sf);
+                    e.style.color = CALC_BLUE; e.style.fontWeight = 'bold';
+                }
+            }
+
+            const resEl = document.getElementById('bk-result');
+            if (resEl) {
+                const r = root.vals.R;
+                resEl.textContent = r !== null ? `Ersatzwiderstand: ${bkFmtVal(r, sf)} Ω` : 'Ersatzwiderstand: —';
+            }
+            bkRedraw();
+        }
+
+        // --- Clear table ---
+        function bkClearTable() {
+            for (const [, ents] of bkTableRows)
+                for (const k of ['U','I','R','P']) { ents[k].value = ''; ents[k].style.color = 'var(--text-normal)'; ents[k].style.fontWeight = 'normal'; }
+            for (const k of ['U','I','R','P']) { const e = bkGesamtEntries[k]; if (e) { e.value = ''; e.style.color = 'var(--text-normal)'; e.style.fontWeight = 'normal'; } }
+            for (const nd of bkLeafNodes) nd.rVal = null;
+            const resEl = document.getElementById('bk-result');
+            if (resEl) resEl.textContent = 'Ersatzwiderstand: —';
+            bkRedraw();
+        }
+
+        // --- Init ---
+        function initBaukastenCalculator() {
+            document.getElementById('bk-btn-new').addEventListener('click', bkReset);
+            document.getElementById('bk-btn-setr').addEventListener('click', bkSetRval);
+            document.getElementById('bk-btn-parallel').addEventListener('click', () => bkCombine('parallel'));
+            document.getElementById('bk-btn-series').addEventListener('click', () => bkCombine('series'));
+            document.getElementById('bk-btn-dissolve').addEventListener('click', bkDissolve);
+            document.getElementById('bk-btn-selall').addEventListener('click', bkSelectAll);
+            document.getElementById('bk-btn-undo').addEventListener('click', bkUndo);
+            document.getElementById('bk-btn-calc').addEventListener('click', bkCalculate);
+            document.getElementById('bk-btn-clear-tbl').addEventListener('click', bkClearTable);
+            const canvas = document.getElementById('bk-canvas');
+            canvas.addEventListener('click', bkOnClick);
+            new ResizeObserver(() => bkRedraw()).observe(canvas.parentElement);
+            bkReset();
         }
 
         // Start
